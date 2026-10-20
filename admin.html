@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel - CV Luxury Shop</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="stylesheet" href="admin.css?v=2">
+</head>
+<body>
+
+<!-- ───────── LOGIN GATE ───────── -->
+<div class="login-gate" id="loginGate">
+  <div class="login-card">
+    <div class="login-logo">
+      <img src="img/logo.png?v=3" alt="CV Luxury" width="52" height="52">
+      <h1>CV <span>Luxury</span> Admin</h1>
+    </div>
+    <p class="login-sub">Sign in to manage your store</p>
+    <form id="loginForm">
+      <div class="field">
+        <label>Username</label>
+        <input type="text" id="loginUser" placeholder="admin" autocomplete="username">
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password">
+      </div>
+      <p class="login-error" id="loginError"></p>
+      <button type="submit" class="btn btn-primary btn-block">Sign In</button>
+    </form>
+    <p class="login-hint">Demo login — Username: <b>admin</b> · Password: <b>admin123</b></p>
+  </div>
+</div>
+
+<!-- ───────── ADMIN SHELL ───────── -->
+<div class="admin" id="adminShell" style="display:none;">
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar__brand">
+      <img src="img/logo.png?v=3" alt="CV Luxury" width="34" height="34">
+      <span>CV <b>Luxury</b></span>
+    </div>
+    <nav class="sidebar__nav">
+      <a href="#" class="nav-item active" data-view="dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        <span>Dashboard</span>
+      </a>
+      <a href="#" class="nav-item" data-view="orders">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        <span>Orders</span>
+        <span class="nav-badge" id="navOrderCount">0</span>
+      </a>
+      <a href="#" class="nav-item" data-view="products">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+        <span>Products</span>
+      </a>
+    </nav>
+    <div class="sidebar__footer">
+      <a href="index.html" target="_blank" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        <span>View Store</span>
+      </a>
+      <a href="#" class="nav-item" id="logoutBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        <span>Logout</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="admin__main">
+    <header class="topbar">
+      <button class="topbar__menu" id="menuToggle" aria-label="Toggle menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <h2 class="topbar__title" id="viewTitle">Dashboard</h2>
+      <div class="topbar__user">
+        <span class="topbar__avatar">A</span>
+        <span class="topbar__name">Admin</span>
+      </div>
+    </header>
+
+    <main class="content" id="content">
+      <!-- DASHBOARD -->
+      <section class="view active" id="view-dashboard">
+        <div class="stats-grid" id="statsGrid"></div>
+        <div class="panel">
+          <div class="panel__head">
+            <h3>Recent Orders</h3>
+            <a href="#" class="link" data-view="orders">View all →</a>
+          </div>
+          <div class="table-wrap" id="recentOrders"></div>
+        </div>
+      </section>
+
+      <!-- ORDERS -->
+      <section class="view" id="view-orders">
+        <div class="toolbar">
+          <div class="search-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="search" id="orderSearch" placeholder="Search by order ID, name, phone...">
+          </div>
+          <div class="filters" id="statusFilters">
+            <button class="chip active" data-status="all">All</button>
+            <button class="chip" data-status="pending">Pending</button>
+            <button class="chip" data-status="processing">Processing</button>
+            <button class="chip" data-status="shipped">Shipped</button>
+            <button class="chip" data-status="delivered">Delivered</button>
+            <button class="chip" data-status="cancelled">Cancelled</button>
+          </div>
+          <button class="btn btn-ghost" id="exportBtn">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export CSV
+          </button>
+        </div>
+        <div class="panel">
+          <div class="table-wrap" id="ordersTable"></div>
+        </div>
+      </section>
+
+      <!-- PRODUCTS -->
+      <section class="view" id="view-products">
+        <div class="toolbar">
+          <div class="search-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="search" id="productSearch" placeholder="Search products...">
+          </div>
+          <button class="btn btn-primary" id="addProductBtn">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add Product
+          </button>
+        </div>
+        <div class="panel">
+          <div class="table-wrap" id="productsTable"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<!-- ───────── ORDER DETAIL DRAWER ───────── -->
+<div class="drawer-overlay" id="drawerOverlay"></div>
+<aside class="order-drawer" id="orderDrawer">
+  <div class="order-drawer__head">
+    <h3 id="drawerTitle">Order Details</h3>
+    <button class="icon-btn" id="drawerClose" aria-label="Close">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="order-drawer__body" id="drawerBody"></div>
+</aside>
+
+<!-- PRODUCT FORM MODAL -->
+<div class="modal-overlay" id="productModal">
+  <div class="modal">
+    <div class="modal__head">
+      <h3 id="productModalTitle">Add Product</h3>
+      <button class="icon-btn" id="productModalClose" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <form class="modal__body" id="productForm">
+      <input type="hidden" id="pfId">
+      <div class="pf-grid">
+        <div class="pf-field pf-full">
+          <label>Product Name *</label>
+          <input type="text" id="pfName" required>
+        </div>
+        <div class="pf-field">
+          <label>Product Code</label>
+          <input type="text" id="pfCode" placeholder="CVL-XX000">
+        </div>
+        <div class="pf-field">
+          <label>Category</label>
+          <select id="pfCategory">
+            <option value="women-shoes">Women's Shoes</option>
+            <option value="men-shoes">Men's Shoes</option>
+            <option value="bags">Bags</option>
+            <option value="watches">Watches</option>
+            <option value="sunglasses">Sunglasses</option>
+            <option value="accessories">Accessories</option>
+          </select>
+        </div>
+        <div class="pf-field">
+          <label>Price (৳) *</label>
+          <input type="number" id="pfPrice" min="0" required>
+        </div>
+        <div class="pf-field">
+          <label>Original Price (৳)</label>
+          <input type="number" id="pfOriginal" min="0">
+        </div>
+        <div class="pf-field">
+          <label>Badge</label>
+          <select id="pfBadge">
+            <option value="in-stock">In Stock</option>
+            <option value="new">New</option>
+            <option value="sale">Sale</option>
+          </select>
+        </div>
+        <div class="pf-field">
+          <label>Sizes (comma separated)</label>
+          <input type="text" id="pfSizes" placeholder="36, 37, 38 or One Size">
+        </div>
+        <div class="pf-field pf-full">
+          <label>Colors (comma separated hex)</label>
+          <input type="text" id="pfColors" placeholder="#1a1a1a, #c9a84c">
+        </div>
+        <div class="pf-field pf-full">
+          <label>Product Image</label>
+          <div class="pf-image-row">
+            <input type="text" id="pfImage" placeholder="img/products/example.jpg or paste URL">
+            <label class="btn btn-ghost pf-upload">
+              Upload
+              <input type="file" id="pfImageFile" accept="image/*" hidden>
+            </label>
+          </div>
+          <img id="pfImagePreview" class="pf-preview" alt="" style="display:none;">
+        </div>
+        <div class="pf-field pf-full">
+          <label>Description</label>
+          <textarea id="pfDesc" rows="3"></textarea>
+        </div>
+        <div class="pf-field pf-full">
+          <label>Highlights (one per line)</label>
+          <textarea id="pfHighlights" rows="4" placeholder="Premium leather&#10;Cushioned insole"></textarea>
+        </div>
+      </div>
+      <p class="pf-error" id="pfError"></p>
+      <div class="modal__foot">
+        <button type="button" class="btn btn-ghost" id="productCancel">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Product</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"><span id="toastMsg"></span></div>
+
+<script src="data.js?v=3"></script>
+<script src="admin.js?v=2"></script>
+</body>
+</html>

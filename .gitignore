@@ -1,0 +1,10 @@
+# OS / editor
+Thumbs.db
+.DS_Store
+*.log
+
+# Dependencies (if any added later)
+node_modules/
+
+# Local launch config
+.claude/

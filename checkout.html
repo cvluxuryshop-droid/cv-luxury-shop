@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checkout - CV Luxury Shop</title>
+  <meta name="description" content="Secure checkout at CV Luxury Shop. Cash on Delivery, bKash & Nagad accepted.">
+  <link rel="stylesheet" href="style.css?v=7">
+</head>
+<body>
+
+<!-- ANNOUNCEMENT BAR -->
+<div class="announcement-bar">
+  ✨ Free Shipping on Orders Over ৳5,000 — Use Code: CVLUXURY
+</div>
+
+<!-- HEADER -->
+<header class="header" id="header">
+  <div class="header__main">
+    <div class="container">
+      <div class="header__logo">
+        <a href="index.html">
+          <img src="img/logo.png?v=3" alt="CV Luxury Shop" class="logo-icon-img">
+          <div class="logo-text">CV <span>Luxury</span> Shop</div>
+        </a>
+      </div>
+      <nav class="header__nav">
+        <a href="index.html" class="nav-link">Home</a>
+        <a href="index.html#shop" class="nav-link">Shop</a>
+      </nav>
+      <div class="header__actions">
+        <a class="action-btn" href="index.html" aria-label="Shopping cart">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+          <span class="badge" id="cartCount">0</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="checkout">
+  <div class="container">
+
+    <nav class="breadcrumb">
+      <a href="index.html">Home</a> <span>/</span>
+      <span>Checkout</span>
+    </nav>
+
+    <div class="checkout__steps">
+      <span class="step done">1. Cart</span>
+      <span class="step active">2. Checkout</span>
+      <span class="step">3. Confirmation</span>
+    </div>
+
+    <div class="checkout__grid" id="checkoutGrid">
+      <!-- LEFT: Shipping form -->
+      <div class="checkout__form">
+        <h2 class="checkout__heading">Shipping Information</h2>
+        <form id="checkoutForm" novalidate>
+          <div class="form-row">
+            <div class="form-field">
+              <label>Full Name *</label>
+              <input type="text" id="fName" placeholder="Your full name" required>
+            </div>
+            <div class="form-field">
+              <label>Phone Number *</label>
+              <input type="tel" id="fPhone" placeholder="01XXXXXXXXX" required>
+            </div>
+          </div>
+          <div class="form-field">
+            <label>Email (optional)</label>
+            <input type="email" id="fEmail" placeholder="you@example.com">
+          </div>
+          <div class="form-field">
+            <label>Full Address *</label>
+            <textarea id="fAddress" rows="2" placeholder="House, road, area" required></textarea>
+          </div>
+          <div class="form-row">
+            <div class="form-field">
+              <label>City / District *</label>
+              <input type="text" id="fCity" placeholder="e.g. Dhaka" required>
+            </div>
+            <div class="form-field">
+              <label>Delivery Area *</label>
+              <select id="fArea">
+                <option value="inside">Inside Dhaka (৳60)</option>
+                <option value="outside">Outside Dhaka (৳120)</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-field">
+            <label>Order Notes (optional)</label>
+            <textarea id="fNotes" rows="2" placeholder="Any special instructions"></textarea>
+          </div>
+
+          <h2 class="checkout__heading" style="margin-top:28px;">Payment Method</h2>
+          <div class="pay-methods">
+            <label class="pay-option">
+              <input type="radio" name="pay" value="cod" checked>
+              <span class="pay-option__box">
+                <strong>Cash on Delivery</strong>
+                <small>Pay when you receive the product</small>
+              </span>
+            </label>
+            <label class="pay-option">
+              <input type="radio" name="pay" value="bkash">
+              <span class="pay-option__box">
+                <strong>bKash</strong>
+                <small>Pay via bKash mobile banking</small>
+              </span>
+            </label>
+            <label class="pay-option">
+              <input type="radio" name="pay" value="nagad">
+              <span class="pay-option__box">
+                <strong>Nagad</strong>
+                <small>Pay via Nagad mobile banking</small>
+              </span>
+            </label>
+          </div>
+        </form>
+      </div>
+
+      <!-- RIGHT: Order summary -->
+      <aside class="checkout__summary">
+        <h2 class="checkout__heading">Order Summary</h2>
+        <div class="summary__items" id="summaryItems"></div>
+        <div class="summary__coupon">
+          <input type="text" id="couponInput" placeholder="Coupon code (try CVLUXURY)">
+          <button type="button" id="couponBtn">Apply</button>
+        </div>
+        <div class="summary__row"><span>Subtotal</span><span id="sumSubtotal">0৳</span></div>
+        <div class="summary__row"><span>Shipping</span><span id="sumShipping">0৳</span></div>
+        <div class="summary__row summary__discount" id="discountRow" style="display:none;"><span>Discount</span><span id="sumDiscount">-0৳</span></div>
+        <div class="summary__row summary__total"><span>Total</span><span id="sumTotal">0৳</span></div>
+        <button type="button" class="btn-primary checkout__place" id="placeOrderBtn">Place Order</button>
+        <a href="index.html#shop" class="checkout__continue">← Continue Shopping</a>
+      </aside>
+    </div>
+
+    <!-- SUCCESS (hidden until order placed) -->
+    <div class="order-success" id="orderSuccess" style="display:none;">
+      <div class="order-success__icon">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      </div>
+      <h2>Order Placed Successfully!</h2>
+      <p>Thank you for shopping with CV Luxury Shop. Your order <strong id="orderId"></strong> has been received.</p>
+      <p class="muted">We will call you shortly on your given number to confirm the delivery.</p>
+      <a href="index.html" class="btn-primary">Back to Home</a>
+    </div>
+
+  </div>
+</main>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer__bottom" style="border:none;padding-top:30px;">
+      <p>&copy; 2026 CV Luxury Shop. All Rights Reserved.</p>
+      <div class="payment-methods">
+        <span>bKash</span><span>Nagad</span><span>Visa</span><span>MasterCard</span><span>COD</span>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <span class="toast-icon">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+  </span>
+  <span id="toastMessage"></span>
+</div>
+
+<script src="data.js?v=3"></script>
+<script src="checkout.js?v=2"></script>
+</body>
+</html>
