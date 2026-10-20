@@ -6,11 +6,6 @@
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => document.querySelectorAll(s);
 
-const ADMIN_USER = 'admin';
-const ADMIN_PASS = 'admin123'; // demo credentials
-const ORDERS_KEY = 'cv_orders';
-const AUTH_KEY = 'cv_admin_auth';
-
 const STATUSES = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
 const STATUS_LABEL = {
   pending: 'Pending', processing: 'Processing', shipped: 'Shipped',
@@ -21,13 +16,19 @@ const PAY_LABEL = { cod: 'Cash on Delivery', bkash: 'bKash', nagad: 'Nagad' };
 let orderFilter = 'all';
 let orderQuery = '';
 
+// In-memory order cache (loaded from Supabase)
+const ORDERS = [];
+
 // ── Data helpers ──
-function loadOrders() {
-  try { return JSON.parse(localStorage.getItem(ORDERS_KEY)) || []; }
-  catch { return []; }
-}
-function saveOrders(list) {
-  localStorage.setItem(ORDERS_KEY, JSON.stringify(list));
+function loadOrders() { return ORDERS; }
+async function refreshOrders() {
+  try {
+    const list = await dbGetOrders();
+    ORDERS.length = 0;
+    list.forEach(o => ORDERS.push(o));
+  } catch (e) {
+    console.error('Load orders failed:', e);
+  }
 }
 function money(n) { return Number(n || 0).toLocaleString() + '৳'; }
 function fmtDate(iso) {
@@ -36,30 +37,35 @@ function fmtDate(iso) {
     ' · ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 }
 
-// ── Auth ──
-document.addEventListener('DOMContentLoaded', () => {
-  if (sessionStorage.getItem(AUTH_KEY) === '1') {
-    showAdmin();
-  }
-  $('#loginForm').addEventListener('submit', (e) => {
-    e.preventDefault();
-    const u = $('#loginUser').value.trim();
-    const p = $('#loginPass').value;
-    if (u === ADMIN_USER && p === ADMIN_PASS) {
-      sessionStorage.setItem(AUTH_KEY, '1');
-      showAdmin();
-    } else {
-      $('#loginError').textContent = 'Invalid username or password.';
-    }
-  });
-  $('#logoutBtn').addEventListener('click', (e) => {
-    e.preventDefault();
-    sessionStorage.removeItem(AUTH_KEY);
-    location.reload();
-  });
+// ── Auth (Supabase) ──
+document.addEventListener('DOMContentLoaded', async () => {
+  $('#loginForm').addEventListener('submit', onLogin);
+  $('#logoutBtn').addEventListener('click', onLogout);
+  const user = await dbGetUser();
+  if (user) showAdmin();
 });
 
-function showAdmin() {
+async function onLogin(e) {
+  e.preventDefault();
+  $('#loginError').textContent = '';
+  const email = $('#loginUser').value.trim();
+  const pass = $('#loginPass').value;
+  const btn = $('#loginForm').querySelector('button[type="submit"]');
+  const label = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Signing in...';
+  const { error } = await dbSignIn(email, pass);
+  btn.disabled = false; btn.textContent = label;
+  if (error) { $('#loginError').textContent = error.message || 'Invalid email or password.'; return; }
+  showAdmin();
+}
+
+async function onLogout(e) {
+  e.preventDefault();
+  await dbSignOut();
+  location.reload();
+}
+
+async function showAdmin() {
   $('#loginGate').style.display = 'none';
   $('#adminShell').style.display = 'flex';
   initNav();
@@ -67,6 +73,7 @@ function showAdmin() {
   initProductsUI();
   $('#exportBtn').addEventListener('click', exportCSV);
   $('#menuToggle').addEventListener('click', () => $('#sidebar').classList.toggle('open'));
+  await Promise.all([refreshOrders(), loadCatalogue()]);
   renderAll();
 }
 
@@ -297,20 +304,26 @@ function closeDrawer() {
   $('#drawerOverlay').classList.remove('open');
 }
 
-function setOrderStatus(id, status) {
-  const orders = loadOrders();
-  const o = orders.find(x => x.id === id);
-  if (!o) return;
-  o.status = status;
-  saveOrders(orders);
+async function setOrderStatus(id, status) {
+  try {
+    await dbUpdateOrderStatus(id, status);
+  } catch (e) {
+    console.error(e); toast('Could not update status'); return;
+  }
+  await refreshOrders();
   toast(`Order #${id} marked ${STATUS_LABEL[status]}`);
   renderAll();
 }
 
-function deleteOrder(id, fromDrawer) {
+async function deleteOrder(id, fromDrawer) {
   if (!confirm(`Delete order #${id}? This cannot be undone.`)) return;
-  saveOrders(loadOrders().filter(o => o.id !== id));
+  try {
+    await dbDeleteOrder(id);
+  } catch (e) {
+    console.error(e); toast('Could not delete order'); return;
+  }
   if (fromDrawer) closeDrawer();
+  await refreshOrders();
   toast(`Order #${id} deleted`);
   renderAll();
 }
@@ -409,7 +422,7 @@ function closeProductForm() {
   $('#productModal').classList.remove('open');
 }
 
-function saveProduct(e) {
+async function saveProduct(e) {
   e.preventDefault();
   const name = $('#pfName').value.trim();
   const price = Number($('#pfPrice').value);
@@ -419,7 +432,8 @@ function saveProduct(e) {
   }
 
   const parseList = (v) => v.split(',').map(s => s.trim()).filter(Boolean);
-  const id = $('#pfId').value ? Number($('#pfId').value) : (Math.max(0, ...PRODUCTS.map(p => p.id)) + 1);
+  const existingId = $('#pfId').value ? Number($('#pfId').value) : null;
+  const id = existingId || await dbNextProductId();
 
   const data = {
     id,
@@ -436,22 +450,29 @@ function saveProduct(e) {
     highlights: $('#pfHighlights').value.split('\n').map(s => s.trim()).filter(Boolean)
   };
 
-  const idx = PRODUCTS.findIndex(p => p.id === id);
-  if (idx > -1) PRODUCTS[idx] = data;
-  else PRODUCTS.push(data);
+  try {
+    await dbSaveProduct(data);
+  } catch (err) {
+    console.error(err);
+    $('#pfError').textContent = 'Could not save. Are you logged in? ' + (err.message || '');
+    return;
+  }
 
-  saveProducts(PRODUCTS);
+  await loadCatalogue();
   closeProductForm();
   renderProducts();
-  toast(idx > -1 ? 'Product updated' : 'Product added');
+  toast(existingId ? 'Product updated' : 'Product added');
 }
 
-function deleteProduct(id) {
+async function deleteProduct(id) {
   const p = getProduct(id);
   if (!confirm(`Delete "${p ? p.name : 'this product'}"? This cannot be undone.`)) return;
-  const idx = PRODUCTS.findIndex(x => x.id === id);
-  if (idx > -1) PRODUCTS.splice(idx, 1);
-  saveProducts(PRODUCTS);
+  try {
+    await dbDeleteProduct(id);
+  } catch (err) {
+    console.error(err); toast('Could not delete product'); return;
+  }
+  await loadCatalogue();
   renderProducts();
   toast('Product deleted');
 }

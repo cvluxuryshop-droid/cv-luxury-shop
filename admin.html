@@ -19,8 +19,8 @@
     <p class="login-sub">Sign in to manage your store</p>
     <form id="loginForm">
       <div class="field">
-        <label>Username</label>
-        <input type="text" id="loginUser" placeholder="admin" autocomplete="username">
+        <label>Email</label>
+        <input type="email" id="loginUser" placeholder="you@example.com" autocomplete="username">
       </div>
       <div class="field">
         <label>Password</label>
@@ -29,7 +29,7 @@
       <p class="login-error" id="loginError"></p>
       <button type="submit" class="btn btn-primary btn-block">Sign In</button>
     </form>
-    <p class="login-hint">Demo login — Username: <b>admin</b> · Password: <b>admin123</b></p>
+    <p class="login-hint">Sign in with the admin email &amp; password you created in Supabase.</p>
   </div>
 </div>
 
@@ -239,7 +239,9 @@
 <!-- TOAST -->
 <div class="toast" id="toast"><span id="toastMsg"></span></div>
 
-<script src="data.js?v=3"></script>
-<script src="admin.js?v=2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="data.js?v=4"></script>
+<script src="db.js?v=1"></script>
+<script src="admin.js?v=3"></script>
 </body>
 </html>

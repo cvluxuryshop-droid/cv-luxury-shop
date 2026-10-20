@@ -19,11 +19,12 @@ const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => document.querySelectorAll(sel);
 
 // ── Initialize App ──
-document.addEventListener('DOMContentLoaded', () => {
-  renderProducts();
+document.addEventListener('DOMContentLoaded', async () => {
   updateCartUI();
   updateWishlistUI();
   initEventListeners();
+  await loadCatalogue();
+  renderProducts();
   initScrollEffects();
 });
 

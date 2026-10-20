@@ -147,23 +147,9 @@ const DEFAULT_PRODUCTS = [
   }
 ];
 
-// ── Product storage (admin add/edit/delete persists here) ──
-const PRODUCTS_KEY = 'cv_products';
-
-function loadProducts() {
-  try {
-    const stored = JSON.parse(localStorage.getItem(PRODUCTS_KEY));
-    if (Array.isArray(stored) && stored.length) return stored;
-  } catch (e) {}
-  return DEFAULT_PRODUCTS.slice();
-}
-
-function saveProducts(list) {
-  localStorage.setItem(PRODUCTS_KEY, JSON.stringify(list));
-}
-
-// Active catalogue used across all pages
-const PRODUCTS = loadProducts();
+// Active catalogue — filled at runtime from Supabase (see db.js loadCatalogue()).
+// Starts empty; DEFAULT_PRODUCTS is used only as an offline fallback.
+let PRODUCTS = [];
 
 // ── Frequently Asked Questions (shared across products) ──
 const FAQS = [

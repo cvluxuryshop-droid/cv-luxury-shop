@@ -11,7 +11,8 @@ const SHIP_OUTSIDE = 120;
 
 let couponApplied = false;
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadCatalogue();
   $('#cartCount').textContent = cartCount();
 
   if (!getCart().length) {
@@ -95,7 +96,7 @@ function applyCoupon() {
   }
 }
 
-function placeOrder() {
+async function placeOrder() {
   // Validate required fields
   const name = $('#fName').value.trim();
   const phone = $('#fPhone').value.trim();
@@ -145,10 +146,19 @@ function placeOrder() {
     status: 'pending'
   };
 
-  // Persist order for the admin panel
-  const orders = JSON.parse(localStorage.getItem('cv_orders') || '[]');
-  orders.unshift(order);
-  localStorage.setItem('cv_orders', JSON.stringify(orders));
+  // Save order to Supabase
+  const btn = $('#placeOrderBtn');
+  btn.disabled = true;
+  btn.textContent = 'Placing order...';
+  try {
+    await dbInsertOrder(order);
+  } catch (err) {
+    console.error(err);
+    showToast('Could not place order. Please try again.');
+    btn.disabled = false;
+    btn.textContent = 'Place Order';
+    return;
+  }
 
   // Clear cart
   setCart([]);

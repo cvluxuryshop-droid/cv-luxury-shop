@@ -10,7 +10,8 @@ let selectedSize = null;
 let selectedColor = 0;
 let qty = 1;
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadCatalogue();
   const id = Number(new URLSearchParams(location.search).get('id'));
   current = getProduct(id);
 
