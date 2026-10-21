@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Product Details - CV Luxury Shop</title>
   <meta name="description" content="View product details, specifications, customer reviews and FAQs at CV Luxury Shop.">
-  <link rel="stylesheet" href="style.css?v=7">
+  <link rel="stylesheet" href="style.css?v=8">
 </head>
 <body>
 
@@ -123,6 +123,26 @@
   </div>
 </div>
 
+<!-- MOBILE NAV DRAWER -->
+<div class="mobile-nav-overlay" id="mobileNavOverlay"></div>
+<div class="mobile-nav" id="mobileNav">
+  <div class="mobile-nav__header">
+    <div class="mobile-nav__logo">
+      <img src="img/logo.png?v=3" alt="CV Luxury Shop" class="logo-icon-img">
+      <div class="logo-text">CV <span>Luxury</span></div>
+    </div>
+    <button class="close-btn" id="mobileNavClose" aria-label="Close menu">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="mobile-nav__links">
+    <a href="index.html">Home</a>
+    <a href="index.html#shop">Shop</a>
+    <a href="index.html#new-arrivals">New Arrivals</a>
+    <a href="index.html#best-sellers">Best Sellers</a>
+  </div>
+</div>
+
 <!-- TOAST -->
 <div class="toast" id="toast">
   <span class="toast-icon">
@@ -139,6 +159,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="data.js?v=4"></script>
 <script src="db.js?v=1"></script>
-<script src="product.js?v=3"></script>
+<script src="product.js?v=4"></script>
 </body>
 </html>
+

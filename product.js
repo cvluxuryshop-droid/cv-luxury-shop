@@ -331,6 +331,17 @@ function initCartDrawer() {
   $('#cartToggle').addEventListener('click', openCart);
   $('#cartClose').addEventListener('click', closeCart);
   $('#cartOverlay').addEventListener('click', closeCart);
+
+  // Mobile nav drawer
+  const menuToggle = $('#mobileMenuToggle');
+  const mobileNav = $('#mobileNav');
+  const navOverlay = $('#mobileNavOverlay');
+  const navClose = $('#mobileNavClose');
+  const openNav = () => { mobileNav.classList.add('active'); navOverlay.classList.add('active'); document.body.style.overflow = 'hidden'; };
+  const closeNav = () => { mobileNav.classList.remove('active'); navOverlay.classList.remove('active'); document.body.style.overflow = ''; };
+  if (menuToggle) menuToggle.addEventListener('click', openNav);
+  if (navClose) navClose.addEventListener('click', closeNav);
+  if (navOverlay) navOverlay.addEventListener('click', closeNav);
   $('#checkoutBtn').addEventListener('click', () => {
     if (!getCart().length) { showToast('Your cart is empty!'); return; }
     window.location.href = 'checkout.html';
