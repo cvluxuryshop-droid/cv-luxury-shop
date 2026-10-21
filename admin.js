@@ -443,9 +443,13 @@ function addColorRow(color, image) {
   $('#pfColorsRows').appendChild(row);
 }
 
-function openProductForm(id) {
+async function openProductForm(id) {
   $('#pfError').textContent = '';
-  const p = id ? getProduct(id) : null;
+  let p = null;
+  if (id) {
+    try { p = await dbGetProduct(id); }
+    catch (e) { p = getProduct(id); }
+  }
   $('#productModalTitle').textContent = p ? 'Edit Product' : 'Add Product';
   $('#pfId').value = p ? p.id : '';
   $('#pfName').value = p ? p.name : '';

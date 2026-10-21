@@ -101,10 +101,21 @@ function productToRow(p) {
 }
 
 // ── Products ──
+// Light list for storefront/admin listings — excludes the heavy `colors`
+// (per-color images can be large) and other detail-only fields for speed.
+const LIST_COLS = 'id,name,code,price,original_price,image,category,badge,sizes';
+
 async function dbGetProducts() {
-  const { data, error } = await sb.from('products').select('*').order('id');
+  const { data, error } = await sb.from('products').select(LIST_COLS).order('id');
   if (error) throw error;
   return (data || []).map(mapProductRow);
+}
+
+// Full single product (with colors + images) for the detail page.
+async function dbGetProduct(id) {
+  const { data, error } = await sb.from('products').select('*').eq('id', id).single();
+  if (error) throw error;
+  return mapProductRow(data);
 }
 
 async function dbSaveProduct(p) {
@@ -169,18 +180,29 @@ async function dbGetUser() {
 
 // ── Catalogue loader for storefront pages ──
 // Fills the global PRODUCTS array (declared in data.js) from the database.
+const CATALOGUE_CACHE = 'cv_catalogue_cache';
+
 async function loadCatalogue() {
   try {
     const list = await dbGetProducts();
     PRODUCTS.length = 0;
     list.forEach(p => PRODUCTS.push(p));
+    try { sessionStorage.setItem(CATALOGUE_CACHE, JSON.stringify(list)); } catch (e) {}
   } catch (e) {
-    console.error('Catalogue load failed, using defaults:', e);
-    if (!PRODUCTS.length) DEFAULT_PRODUCTS.forEach(p => PRODUCTS.push({
-      ...p,
-      sizes: normalizeSizes(p.sizes),
-      colors: normalizeColors(p.colors)
-    }));
+    console.error('Catalogue load failed:', e);
+    // fall back to the last good list, then to bundled defaults
+    let cached = null;
+    try { cached = JSON.parse(sessionStorage.getItem(CATALOGUE_CACHE)); } catch (e2) {}
+    if (Array.isArray(cached) && cached.length) {
+      PRODUCTS.length = 0;
+      cached.forEach(p => PRODUCTS.push(p));
+    } else if (!PRODUCTS.length) {
+      DEFAULT_PRODUCTS.forEach(p => PRODUCTS.push({
+        ...p,
+        sizes: normalizeSizes(p.sizes),
+        colors: normalizeColors(p.colors)
+      }));
+    }
   }
   return PRODUCTS;
 }

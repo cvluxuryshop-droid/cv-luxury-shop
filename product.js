@@ -11,9 +11,14 @@ let selectedColor = 0;
 let qty = 1;
 
 document.addEventListener('DOMContentLoaded', async () => {
-  await loadCatalogue();
   const id = Number(new URLSearchParams(location.search).get('id'));
-  current = getProduct(id);
+  // Fetch the full single product (with colors + images); fall back to the light list
+  try {
+    current = await dbGetProduct(id);
+  } catch (e) {
+    await loadCatalogue();
+    current = getProduct(id);
+  }
 
   if (!current) {
     $('#pdpMain').innerHTML = `
@@ -34,9 +39,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   renderMain();
   renderTabs();
-  renderRelated();
   updateCartUI();
   initCartDrawer();
+
+  // Related products need the light catalogue list (load in background)
+  if (!PRODUCTS.length) await loadCatalogue();
+  renderRelated();
 });
 
 // ── Main product block ──
