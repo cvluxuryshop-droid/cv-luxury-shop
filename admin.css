@@ -276,6 +276,19 @@ svg { width: 20px; height: 20px; }
 .pf-preview { margin-top: 10px; width: 90px; height: 90px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border); }
 .pf-error { color: var(--red); font-size: 0.82rem; margin-top: 12px; min-height: 16px; }
 
+/* Sizes & stock editor */
+.pf-sizes { display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; }
+.pf-size-row { display: flex; gap: 8px; align-items: center; }
+.pf-size-row .pf-size-name { flex: 1; }
+.pf-size-row .pf-size-stock { width: 150px; }
+.pf-size-row input { padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.88rem; font-family: inherit; }
+.pf-size-row input:focus { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px rgba(255,94,3,0.1); }
+.pf-size-del { width: 36px; height: 36px; flex-shrink: 0; border: 1px solid var(--border); background: var(--surface); border-radius: 8px; color: var(--muted); font-size: 1.2rem; line-height: 1; }
+.pf-size-del:hover { border-color: var(--red); color: var(--red); }
+.pf-addsize { align-self: flex-start; background: var(--surface); border: 1px dashed var(--brand); color: var(--brand); border-radius: 8px; padding: 8px 16px; font-size: 0.84rem; font-weight: 600; }
+.pf-addsize:hover { background: rgba(255,94,3,0.05); }
+.pf-hint { display: block; margin-top: 8px; color: var(--dim); font-size: 0.78rem; }
+
 /* ── Responsive ── */
 @media (max-width: 1024px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 560px) { .pf-grid { grid-template-columns: 1fr; } }

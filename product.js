@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
-  selectedSize = current.sizes[0];
+  selectedSize = firstAvailableSize(current);
   document.title = `${current.name} - CV Luxury Shop`;
   $('#breadcrumbName').textContent = current.name;
 
@@ -77,8 +77,13 @@ function renderMain() {
       <div class="pdp__option">
         <label>Size</label>
         <div class="pdp__sizes" id="pdpSizes">
-          ${p.sizes.map((s, i) => `<button class="size-btn ${i === 0 ? 'active' : ''}" data-size="${s}">${s}</button>`).join('')}
+          ${p.sizes.map(s => {
+            const out = (s.stock === 0);
+            const active = (s.size === selectedSize);
+            return `<button class="size-btn ${active ? 'active' : ''} ${out ? 'out' : ''}" data-size="${s.size}" ${out ? 'disabled' : ''}>${s.size}</button>`;
+          }).join('')}
         </div>
+        <div class="pdp__stock-note" id="stockNote"></div>
       </div>
 
       <div class="pdp__buy">
@@ -111,18 +116,26 @@ function renderMain() {
   // Size select
   $$('#pdpSizes .size-btn').forEach(btn => {
     btn.addEventListener('click', () => {
+      if (btn.disabled) return;
       $$('#pdpSizes .size-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       selectedSize = btn.dataset.size;
+      updateStockNote();
     });
   });
+  updateStockNote();
 
-  // Qty
+  // Qty (respect stock limit)
   $('#qtyMinus').addEventListener('click', () => { if (qty > 1) { qty--; $('#qtyVal').textContent = qty; } });
-  $('#qtyPlus').addEventListener('click', () => { qty++; $('#qtyVal').textContent = qty; });
+  $('#qtyPlus').addEventListener('click', () => {
+    const max = selectedStock();
+    if (max !== null && qty >= max) { showToast(`Only ${max} left in size ${selectedSize}`); return; }
+    qty++; $('#qtyVal').textContent = qty;
+  });
 
   // Add to cart
   $('#addCartBtn').addEventListener('click', () => {
+    if (!canAddSelected()) return;
     addToCartShared(current.id, qty, selectedSize);
     updateCartUI();
     showToast(`${current.name} added to cart!`);
@@ -131,9 +144,40 @@ function renderMain() {
 
   // Buy now → straight to checkout
   $('#buyNowBtn').addEventListener('click', () => {
+    if (!canAddSelected()) return;
     addToCartShared(current.id, qty, selectedSize);
     window.location.href = 'checkout.html';
   });
+
+  // reflect out-of-stock on action buttons
+  if (productOutOfStock(current)) {
+    $('#addCartBtn').disabled = true;
+    $('#buyNowBtn').disabled = true;
+    $('#addCartBtn').textContent = 'Out of Stock';
+  }
+}
+
+// stock (number) of the currently selected size, or null if untracked
+function selectedStock() {
+  const s = (current.sizes || []).find(x => x.size === selectedSize);
+  return s && typeof s.stock === 'number' ? s.stock : null;
+}
+
+function canAddSelected() {
+  const max = selectedStock();
+  if (max === 0) { showToast(`Size ${selectedSize} is out of stock`); return false; }
+  if (max !== null && qty > max) { showToast(`Only ${max} left in size ${selectedSize}`); return false; }
+  return true;
+}
+
+function updateStockNote() {
+  const note = $('#stockNote');
+  if (!note) return;
+  const max = selectedStock();
+  if (max === null) { note.textContent = ''; note.className = 'pdp__stock-note'; return; }
+  if (max === 0) { note.textContent = `Size ${selectedSize} — Out of stock`; note.className = 'pdp__stock-note out'; }
+  else if (max <= 5) { note.textContent = `Only ${max} left in size ${selectedSize}`; note.className = 'pdp__stock-note low'; }
+  else { note.textContent = `In stock (${max} available)`; note.className = 'pdp__stock-note ok'; }
 }
 
 // ── Tabs ──

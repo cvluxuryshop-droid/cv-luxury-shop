@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Panel - CV Luxury Shop</title>
   <meta name="robots" content="noindex, nofollow">
-  <link rel="stylesheet" href="admin.css?v=2">
+  <link rel="stylesheet" href="admin.css?v=3">
 </head>
 <body>
 
@@ -199,13 +199,15 @@
             <option value="sale">Sale</option>
           </select>
         </div>
-        <div class="pf-field">
-          <label>Sizes (comma or space separated)</label>
-          <input type="text" id="pfSizes" placeholder="36, 37, 38, 39, 40  —  or  —  One Size">
+        <div class="pf-field pf-full">
+          <label>Sizes &amp; Stock</label>
+          <div class="pf-sizes" id="pfSizesRows"></div>
+          <button type="button" class="pf-addsize" id="pfAddSize">+ Add Size</button>
+          <small class="pf-hint">Stock empty = unlimited · 0 = out of stock. Each size shows separately on the site.</small>
         </div>
         <div class="pf-field pf-full">
-          <label>Colors — add 3–4 (comma or space separated hex)</label>
-          <input type="text" id="pfColors" placeholder="#1a1a1a, #ff5e03, #c9a84c, #5c1a2a">
+          <label>Colors — add 3–4 (comma or space separated hex / name)</label>
+          <input type="text" id="pfColors" placeholder="#1a1a1a, #ff5e03, Khaki, Beige">
         </div>
         <div class="pf-field pf-full">
           <label>Product Image</label>
@@ -240,8 +242,8 @@
 <div class="toast" id="toast"><span id="toastMsg"></span></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="data.js?v=4"></script>
-<script src="db.js?v=3"></script>
-<script src="admin.js?v=4"></script>
+<script src="data.js?v=5"></script>
+<script src="db.js?v=4"></script>
+<script src="admin.js?v=5"></script>
 </body>
 </html>

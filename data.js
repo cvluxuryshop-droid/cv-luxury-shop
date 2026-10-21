@@ -215,6 +215,24 @@ function getProduct(id) {
   return PRODUCTS.find(p => p.id === Number(id));
 }
 
+// A size is available when stock is null (untracked) or > 0
+function sizeAvailable(s) {
+  return s && (s.stock === null || s.stock === undefined || s.stock > 0);
+}
+
+function firstAvailableSize(product) {
+  const sizes = (product && product.sizes) || [];
+  const avail = sizes.find(sizeAvailable) || sizes[0];
+  return avail ? avail.size : 'One Size';
+}
+
+// Product is out of stock when it has tracked sizes and all are 0
+function productOutOfStock(product) {
+  const sizes = (product && product.sizes) || [];
+  if (!sizes.length) return false;
+  return sizes.every(s => s.stock === 0);
+}
+
 function starsHTML(rating) {
   let html = '';
   for (let i = 1; i <= 5; i++) {
@@ -246,7 +264,7 @@ function addToCartShared(id, qty = 1, size = null) {
   if (existing) {
     existing.qty += qty;
   } else {
-    cart.push({ id, qty, size: size || product.sizes[0] });
+    cart.push({ id, qty, size: size || firstAvailableSize(product) });
   }
   setCart(cart);
 }

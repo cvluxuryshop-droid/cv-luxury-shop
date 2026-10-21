@@ -10,21 +10,36 @@ const SUPABASE_KEY = 'sb_publishable_8hCn6N_auPv562uNgkHuJA_qX1U9hea';
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── Normalizers (handle values typed with commas, spaces or newlines) ──
+// Sizes are stored as [{ size: "36", stock: 10 }]. stock null = not tracked (always available).
 function normalizeSizes(arr) {
   const out = [];
+  const add = (sz, stock) => {
+    sz = String(sz).trim();
+    if (!sz) return;
+    let s = null;
+    if (stock !== null && stock !== undefined && stock !== '') {
+      s = Number(stock);
+      if (isNaN(s) || s < 0) s = null;
+    }
+    out.push({ size: sz, stock: s });
+  };
   (Array.isArray(arr) ? arr : []).forEach(raw => {
+    if (raw && typeof raw === 'object' && raw.size != null) {
+      add(raw.size, raw.stock);
+      return;
+    }
+    // legacy string form
     String(raw).split(/[,\n]+/).forEach(part => {
       part = part.trim();
       if (!part) return;
-      // split purely-numeric groups separated by spaces (e.g. "36 37 38")
       if (/^[\d\s.]+$/.test(part) && /\s/.test(part)) {
-        part.split(/\s+/).forEach(t => { if (t) out.push(t); });
+        part.split(/\s+/).forEach(t => { if (t) add(t, null); });
       } else {
-        out.push(part);
+        add(part, null);
       }
     });
   });
-  return out.length ? out : ['One Size'];
+  return out.length ? out : [{ size: 'One Size', stock: null }];
 }
 
 function normalizeColors(arr) {
@@ -154,7 +169,11 @@ async function loadCatalogue() {
     list.forEach(p => PRODUCTS.push(p));
   } catch (e) {
     console.error('Catalogue load failed, using defaults:', e);
-    if (!PRODUCTS.length) DEFAULT_PRODUCTS.forEach(p => PRODUCTS.push(p));
+    if (!PRODUCTS.length) DEFAULT_PRODUCTS.forEach(p => PRODUCTS.push({
+      ...p,
+      sizes: normalizeSizes(p.sizes),
+      colors: normalizeColors(p.colors)
+    }));
   }
   return PRODUCTS;
 }

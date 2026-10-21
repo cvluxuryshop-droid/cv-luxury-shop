@@ -46,8 +46,10 @@ function renderProductGrid(containerId, items) {
   container.innerHTML = items.map(product => {
     const discount = Math.round((1 - product.price / product.originalPrice) * 100);
     const isWished = state.wishlist.includes(product.id);
-    const badgeClass = product.badge === 'in-stock' ? 'stock' : product.badge === 'sale' ? 'sale' : 'new';
-    const badgeText = product.badge === 'in-stock' ? 'IN-STOCK' : product.badge === 'sale' ? `${discount}% OFF` : 'NEW';
+    const outOfStock = productOutOfStock(product);
+    let badgeClass = product.badge === 'in-stock' ? 'stock' : product.badge === 'sale' ? 'sale' : 'new';
+    let badgeText = product.badge === 'in-stock' ? 'IN-STOCK' : product.badge === 'sale' ? `${discount}% OFF` : 'NEW';
+    if (outOfStock) { badgeClass = 'sale'; badgeText = 'OUT OF STOCK'; }
 
     return `
       <div class="product-card" data-id="${product.id}">
@@ -91,11 +93,16 @@ function addToCart(productId, qty = 1) {
   const product = products.find(p => p.id === productId);
   if (!product) return;
 
+  if (productOutOfStock(product)) {
+    showToast(`${product.name} is out of stock`);
+    return;
+  }
+
   const existingItem = state.cart.find(item => item.id === productId);
   if (existingItem) {
     existingItem.qty += qty;
   } else {
-    state.cart.push({ id: productId, qty: qty, size: state.selectedSize || product.sizes[0] });
+    state.cart.push({ id: productId, qty: qty, size: state.selectedSize || firstAvailableSize(product) });
   }
 
   saveCart();

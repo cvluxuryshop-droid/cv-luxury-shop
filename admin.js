@@ -377,6 +377,7 @@ function initProductsUI() {
   $('#productCancel').addEventListener('click', closeProductForm);
   $('#productModal').addEventListener('click', (e) => { if (e.target === e.currentTarget) closeProductForm(); });
   $('#productForm').addEventListener('submit', saveProduct);
+  $('#pfAddSize').addEventListener('click', () => addSizeRow('', ''));
 
   // image upload → dataURL
   $('#pfImageFile').addEventListener('change', (e) => {
@@ -398,6 +399,19 @@ function showImagePreview(src) {
   else { img.style.display = 'none'; }
 }
 
+function addSizeRow(size, stock) {
+  const row = document.createElement('div');
+  row.className = 'pf-size-row';
+  const sizeVal = (size == null ? '' : String(size)).replace(/"/g, '&quot;');
+  const stockVal = (stock === null || stock === undefined || stock === '') ? '' : stock;
+  row.innerHTML = `
+    <input type="text" class="pf-size-name" placeholder="Size (e.g. 40)" value="${sizeVal}">
+    <input type="number" class="pf-size-stock" placeholder="Stock (empty = ∞)" min="0" value="${stockVal}">
+    <button type="button" class="pf-size-del" aria-label="Remove size">×</button>`;
+  row.querySelector('.pf-size-del').addEventListener('click', () => row.remove());
+  $('#pfSizesRows').appendChild(row);
+}
+
 function openProductForm(id) {
   $('#pfError').textContent = '';
   const p = id ? getProduct(id) : null;
@@ -409,7 +423,17 @@ function openProductForm(id) {
   $('#pfPrice').value = p ? p.price : '';
   $('#pfOriginal').value = p ? (p.originalPrice || '') : '';
   $('#pfBadge').value = p ? p.badge : 'in-stock';
-  $('#pfSizes').value = p ? (p.sizes || []).join(', ') : 'One Size';
+
+  // Sizes + stock rows
+  const rowsC = $('#pfSizesRows');
+  rowsC.innerHTML = '';
+  const sizes = (p && Array.isArray(p.sizes) && p.sizes.length) ? p.sizes : null;
+  if (sizes) {
+    sizes.forEach(s => addSizeRow(s && s.size != null ? s.size : s, s && s.stock != null ? s.stock : ''));
+  } else {
+    addSizeRow('', '');
+  }
+
   $('#pfColors').value = p ? (p.colors || []).join(', ') : '#1a1a1a';
   $('#pfImage').value = p ? (p.image || '') : '';
   $('#pfDesc').value = p ? (p.description || '') : '';
@@ -435,6 +459,15 @@ async function saveProduct(e) {
   const id = existingId || await dbNextProductId();
 
   const colors = normalizeColors([$('#pfColors').value]);
+
+  const sizeRows = [];
+  $$('#pfSizesRows .pf-size-row').forEach(r => {
+    const nm = r.querySelector('.pf-size-name').value.trim();
+    if (!nm) return;
+    const st = r.querySelector('.pf-size-stock').value.trim();
+    sizeRows.push({ size: nm, stock: st === '' ? null : Number(st) });
+  });
+
   const data = {
     id,
     name,
@@ -445,7 +478,7 @@ async function saveProduct(e) {
     category: $('#pfCategory').value,
     badge: $('#pfBadge').value,
     colors: colors.length ? colors : ['#1a1a1a'],
-    sizes: normalizeSizes([$('#pfSizes').value]),
+    sizes: normalizeSizes(sizeRows.length ? sizeRows : [{ size: 'One Size', stock: null }]),
     description: $('#pfDesc').value.trim(),
     highlights: $('#pfHighlights').value.split('\n').map(s => s.trim()).filter(Boolean)
   };
