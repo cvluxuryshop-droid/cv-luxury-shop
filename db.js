@@ -42,18 +42,25 @@ function normalizeSizes(arr) {
   return out.length ? out : [{ size: 'One Size', stock: null }];
 }
 
+// Colors are stored as [{ color: "#000"/"Black", image: "url"|null }].
+// image is the product photo shown when that color is selected (optional).
+function isColorToken(x) {
+  return /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(x) || /^[A-Za-z]{3,}$/.test(x);
+}
 function normalizeColors(arr) {
   const out = [];
+  const add = (val, image) => {
+    val = String(val).trim();
+    if (!isColorToken(val)) return;
+    out.push({ color: val, image: (image && String(image).trim()) ? String(image).trim() : null });
+  };
   (Array.isArray(arr) ? arr : []).forEach(raw => {
-    // split on commas, whitespace, slashes, colons — drops emoji/punctuation glue
-    String(raw).split(/[,\s\n/:]+/).forEach(x => {
-      x = x.trim();
-      if (!x) return;
-      // keep only valid hex codes or CSS color names (e.g. Black, Khaki, Beige)
-      if (/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(x) || /^[A-Za-z]{3,}$/.test(x)) {
-        out.push(x);
-      }
-    });
+    if (raw && typeof raw === 'object' && raw.color != null) {
+      add(raw.color, raw.image);
+      return;
+    }
+    // legacy string form — split on commas/space/slash/colon, drop emoji/punctuation
+    String(raw).split(/[,\s\n/:]+/).forEach(x => add(x, null));
   });
   return out;
 }

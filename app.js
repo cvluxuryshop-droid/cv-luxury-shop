@@ -74,7 +74,7 @@ function renderProductGrid(containerId, items) {
           </div>
         </div>
         <div class="product-card__colors">
-          ${product.colors.map((c, i) => `<span class="color-dot ${i === 0 ? 'active' : ''}" style="background:${c}"></span>`).join('')}
+          ${product.colors.map((c, i) => `<span class="color-dot ${i === 0 ? 'active' : ''}" style="background:${c.color}"></span>`).join('')}
         </div>
         <div class="product-card__actions">
           <button class="product-card__add-to-cart" onclick="addToCart(${product.id})">

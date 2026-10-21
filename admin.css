@@ -289,6 +289,19 @@ svg { width: 20px; height: 20px; }
 .pf-addsize:hover { background: rgba(255,94,3,0.05); }
 .pf-hint { display: block; margin-top: 8px; color: var(--dim); font-size: 0.78rem; }
 
+/* Colors & images editor */
+.pf-colors { display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; }
+.pf-color-row { display: flex; gap: 8px; align-items: center; }
+.pf-color-row .pf-color-val { width: 130px; flex-shrink: 0; }
+.pf-color-row .pf-color-img { flex: 1; min-width: 0; }
+.pf-color-row input { padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.86rem; font-family: inherit; }
+.pf-color-row input:focus { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px rgba(255,94,3,0.1); }
+.pf-color-upload { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; flex-shrink: 0; border: 1px solid var(--border); border-radius: 8px; color: var(--muted); cursor: pointer; }
+.pf-color-upload:hover { border-color: var(--brand); color: var(--brand); }
+.pf-color-preview { width: 36px; height: 36px; flex-shrink: 0; object-fit: cover; border-radius: 8px; border: 1px solid var(--border); }
+.pf-color-del { width: 36px; height: 36px; flex-shrink: 0; border: 1px solid var(--border); background: var(--surface); border-radius: 8px; color: var(--muted); font-size: 1.2rem; line-height: 1; }
+.pf-color-del:hover { border-color: var(--red); color: var(--red); }
+
 /* ── Responsive ── */
 @media (max-width: 1024px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 560px) { .pf-grid { grid-template-columns: 1fr; } }

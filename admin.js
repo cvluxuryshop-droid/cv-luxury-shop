@@ -378,6 +378,7 @@ function initProductsUI() {
   $('#productModal').addEventListener('click', (e) => { if (e.target === e.currentTarget) closeProductForm(); });
   $('#productForm').addEventListener('submit', saveProduct);
   $('#pfAddSize').addEventListener('click', () => addSizeRow('', ''));
+  $('#pfAddColor').addEventListener('click', () => addColorRow('', ''));
 
   // image upload → dataURL
   $('#pfImageFile').addEventListener('change', (e) => {
@@ -412,6 +413,36 @@ function addSizeRow(size, stock) {
   $('#pfSizesRows').appendChild(row);
 }
 
+function addColorRow(color, image) {
+  const row = document.createElement('div');
+  row.className = 'pf-color-row';
+  const cv = (color == null ? '' : String(color)).replace(/"/g, '&quot;');
+  const iv = (image == null ? '' : String(image)).replace(/"/g, '&quot;');
+  row.innerHTML = `
+    <input type="text" class="pf-color-val" placeholder="#000 or Black" value="${cv}">
+    <input type="text" class="pf-color-img" placeholder="Image URL (or upload →)" value="${iv}">
+    <label class="pf-color-upload" title="Upload image">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      <input type="file" accept="image/*" hidden>
+    </label>
+    <img class="pf-color-preview" alt="" ${iv ? `src="${iv}"` : 'style="display:none"'}>
+    <button type="button" class="pf-color-del" aria-label="Remove color">×</button>`;
+  const fileInput = row.querySelector('input[type=file]');
+  const imgField = row.querySelector('.pf-color-img');
+  const preview = row.querySelector('.pf-color-preview');
+  const showPrev = (src) => { if (src) { preview.src = src; preview.style.display = 'block'; } else { preview.style.display = 'none'; } };
+  fileInput.addEventListener('change', (e) => {
+    const f = e.target.files[0];
+    if (!f) return;
+    const rd = new FileReader();
+    rd.onload = () => { imgField.value = rd.result; showPrev(rd.result); };
+    rd.readAsDataURL(f);
+  });
+  imgField.addEventListener('input', () => showPrev(imgField.value.trim()));
+  row.querySelector('.pf-color-del').addEventListener('click', () => row.remove());
+  $('#pfColorsRows').appendChild(row);
+}
+
 function openProductForm(id) {
   $('#pfError').textContent = '';
   const p = id ? getProduct(id) : null;
@@ -434,7 +465,15 @@ function openProductForm(id) {
     addSizeRow('', '');
   }
 
-  $('#pfColors').value = p ? (p.colors || []).join(', ') : '#1a1a1a';
+  // Colors + images rows
+  const colorsC = $('#pfColorsRows');
+  colorsC.innerHTML = '';
+  const cols = (p && Array.isArray(p.colors) && p.colors.length) ? p.colors : null;
+  if (cols) {
+    cols.forEach(c => addColorRow(c && c.color != null ? c.color : c, c && c.image ? c.image : ''));
+  } else {
+    addColorRow('#1a1a1a', '');
+  }
   $('#pfImage').value = p ? (p.image || '') : '';
   $('#pfDesc').value = p ? (p.description || '') : '';
   $('#pfHighlights').value = p ? (p.highlights || []).join('\n') : '';
@@ -458,7 +497,14 @@ async function saveProduct(e) {
   const existingId = $('#pfId').value ? Number($('#pfId').value) : null;
   const id = existingId || await dbNextProductId();
 
-  const colors = normalizeColors([$('#pfColors').value]);
+  const colorRows = [];
+  $$('#pfColorsRows .pf-color-row').forEach(r => {
+    const val = r.querySelector('.pf-color-val').value.trim();
+    if (!val) return;
+    const img = r.querySelector('.pf-color-img').value.trim();
+    colorRows.push({ color: val, image: img || null });
+  });
+  const colors = normalizeColors(colorRows);
 
   const sizeRows = [];
   $$('#pfSizesRows .pf-size-row').forEach(r => {
@@ -477,7 +523,7 @@ async function saveProduct(e) {
     image: $('#pfImage').value.trim() || 'img/products/heels-rose-gold.jpg',
     category: $('#pfCategory').value,
     badge: $('#pfBadge').value,
-    colors: colors.length ? colors : ['#1a1a1a'],
+    colors: colors.length ? colors : [{ color: '#1a1a1a', image: null }],
     sizes: normalizeSizes(sizeRows.length ? sizeRows : [{ size: 'One Size', stock: null }]),
     description: $('#pfDesc').value.trim(),
     highlights: $('#pfHighlights').value.split('\n').map(s => s.trim()).filter(Boolean)

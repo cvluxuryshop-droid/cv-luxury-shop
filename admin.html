@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Panel - CV Luxury Shop</title>
   <meta name="robots" content="noindex, nofollow">
-  <link rel="stylesheet" href="admin.css?v=3">
+  <link rel="stylesheet" href="admin.css?v=4">
 </head>
 <body>
 
@@ -206,8 +206,10 @@
           <small class="pf-hint">Stock empty = unlimited · 0 = out of stock. Each size shows separately on the site.</small>
         </div>
         <div class="pf-field pf-full">
-          <label>Colors — add 3–4 (comma or space separated hex / name)</label>
-          <input type="text" id="pfColors" placeholder="#1a1a1a, #ff5e03, Khaki, Beige">
+          <label>Colors &amp; Images — add 3–4</label>
+          <div class="pf-colors" id="pfColorsRows"></div>
+          <button type="button" class="pf-addsize" id="pfAddColor">+ Add Color</button>
+          <small class="pf-hint">Color = hex (#000) or name (Black). Add an image per color to switch the product photo when selected (optional).</small>
         </div>
         <div class="pf-field pf-full">
           <label>Product Image</label>
@@ -243,7 +245,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="data.js?v=5"></script>
-<script src="db.js?v=4"></script>
-<script src="admin.js?v=5"></script>
+<script src="db.js?v=5"></script>
+<script src="admin.js?v=6"></script>
 </body>
 </html>

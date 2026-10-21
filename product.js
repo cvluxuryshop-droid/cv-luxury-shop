@@ -49,7 +49,7 @@ function renderMain() {
     <div class="pdp__gallery">
       <div class="pdp__image">
         <span class="pdp__badge">-${discount}%</span>
-        <img src="${p.image}" alt="${p.name}" id="pdpMainImg">
+        <img src="${(p.colors[0] && p.colors[0].image) || p.image}" alt="${p.name}" id="pdpMainImg">
       </div>
     </div>
     <div class="pdp__info">
@@ -70,7 +70,7 @@ function renderMain() {
       <div class="pdp__option">
         <label>Color</label>
         <div class="pdp__colors" id="pdpColors">
-          ${p.colors.map((c, i) => `<span class="color-dot ${i === 0 ? 'active' : ''}" data-i="${i}" style="background:${c}"></span>`).join('')}
+          ${p.colors.map((c, i) => `<span class="color-dot ${i === 0 ? 'active' : ''}" data-i="${i}" data-img="${c.image || ''}" style="background:${c.color}"></span>`).join('')}
         </div>
       </div>
 
@@ -104,12 +104,15 @@ function renderMain() {
     </div>
   `;
 
-  // Color select
+  // Color select (also swaps the main image when that color has one)
   $$('#pdpColors .color-dot').forEach(dot => {
     dot.addEventListener('click', () => {
       $$('#pdpColors .color-dot').forEach(d => d.classList.remove('active'));
       dot.classList.add('active');
       selectedColor = Number(dot.dataset.i);
+      const img = dot.dataset.img;
+      const mainImg = document.getElementById('pdpMainImg');
+      if (mainImg) mainImg.src = img ? img : current.image;
     });
   });
 
