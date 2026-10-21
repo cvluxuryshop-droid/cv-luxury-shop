@@ -2322,6 +2322,12 @@ input, select, textarea {
     font-size: 1.15rem;
   }
 
+  /* Hide the short description under the price on mobile —
+     the full Description tab already shows it below */
+  .pdp__shortdesc {
+    display: none;
+  }
+
   .product-card__info {
     padding: 10px 12px;
   }
