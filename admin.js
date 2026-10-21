@@ -431,10 +431,10 @@ async function saveProduct(e) {
     return;
   }
 
-  const parseList = (v) => v.split(',').map(s => s.trim()).filter(Boolean);
   const existingId = $('#pfId').value ? Number($('#pfId').value) : null;
   const id = existingId || await dbNextProductId();
 
+  const colors = normalizeColors([$('#pfColors').value]);
   const data = {
     id,
     name,
@@ -444,8 +444,8 @@ async function saveProduct(e) {
     image: $('#pfImage').value.trim() || 'img/products/heels-rose-gold.jpg',
     category: $('#pfCategory').value,
     badge: $('#pfBadge').value,
-    colors: parseList($('#pfColors').value).length ? parseList($('#pfColors').value) : ['#1a1a1a'],
-    sizes: parseList($('#pfSizes').value).length ? parseList($('#pfSizes').value) : ['One Size'],
+    colors: colors.length ? colors : ['#1a1a1a'],
+    sizes: normalizeSizes([$('#pfSizes').value]),
     description: $('#pfDesc').value.trim(),
     highlights: $('#pfHighlights').value.split('\n').map(s => s.trim()).filter(Boolean)
   };

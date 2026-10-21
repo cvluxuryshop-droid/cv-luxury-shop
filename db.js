@@ -9,6 +9,40 @@ const SUPABASE_KEY = 'sb_publishable_8hCn6N_auPv562uNgkHuJA_qX1U9hea';
 // supabase-js (loaded via CDN) exposes window.supabase.createClient
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+// ── Normalizers (handle values typed with commas, spaces or newlines) ──
+function normalizeSizes(arr) {
+  const out = [];
+  (Array.isArray(arr) ? arr : []).forEach(raw => {
+    String(raw).split(/[,\n]+/).forEach(part => {
+      part = part.trim();
+      if (!part) return;
+      // split purely-numeric groups separated by spaces (e.g. "36 37 38")
+      if (/^[\d\s.]+$/.test(part) && /\s/.test(part)) {
+        part.split(/\s+/).forEach(t => { if (t) out.push(t); });
+      } else {
+        out.push(part);
+      }
+    });
+  });
+  return out.length ? out : ['One Size'];
+}
+
+function normalizeColors(arr) {
+  const out = [];
+  (Array.isArray(arr) ? arr : []).forEach(raw => {
+    // split on commas, whitespace, slashes, colons — drops emoji/punctuation glue
+    String(raw).split(/[,\s\n/:]+/).forEach(x => {
+      x = x.trim();
+      if (!x) return;
+      // keep only valid hex codes or CSS color names (e.g. Black, Khaki, Beige)
+      if (/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(x) || /^[A-Za-z]{3,}$/.test(x)) {
+        out.push(x);
+      }
+    });
+  });
+  return out;
+}
+
 // ── Field mapping (DB snake_case <-> app camelCase) ──
 function mapProductRow(r) {
   return {
@@ -20,8 +54,8 @@ function mapProductRow(r) {
     image: r.image || '',
     category: r.category || 'accessories',
     badge: r.badge || 'in-stock',
-    colors: Array.isArray(r.colors) ? r.colors : [],
-    sizes: Array.isArray(r.sizes) ? r.sizes : [],
+    colors: normalizeColors(r.colors),
+    sizes: normalizeSizes(r.sizes),
     description: r.description || '',
     highlights: Array.isArray(r.highlights) ? r.highlights : []
   };
