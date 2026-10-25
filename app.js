@@ -148,7 +148,15 @@ function updateCartUI() {
 
   const cartCountEl = document.getElementById('cartCount');
   const cartTotalEl = document.getElementById('cartTotal');
-  if (cartCountEl) cartCountEl.textContent = count;
+  if (cartCountEl) {
+    const prev = Number(cartCountEl.textContent) || 0;
+    cartCountEl.textContent = count;
+    if (count !== prev) {
+      cartCountEl.classList.remove('pop');
+      void cartCountEl.offsetWidth; // restart animation
+      cartCountEl.classList.add('pop');
+    }
+  }
   if (cartTotalEl) cartTotalEl.textContent = `${total.toLocaleString()}৳`;
 }
 
@@ -203,7 +211,13 @@ function toggleWishlist(productId) {
   }
   localStorage.setItem('cv_wishlist', JSON.stringify(state.wishlist));
   updateWishlistUI();
-  renderProducts(); // Re-render to update heart icons
+  // Update heart icons in place (no full re-render, so cards don't re-animate)
+  const active = state.wishlist.includes(productId);
+  $$(`.product-card__wishlist[data-id="${productId}"]`).forEach(btn => {
+    btn.classList.toggle('active', active);
+    const svg = btn.querySelector('svg');
+    if (svg) svg.setAttribute('fill', active ? 'currentColor' : 'none');
+  });
 }
 
 function updateWishlistUI() {
@@ -218,7 +232,7 @@ function openProductModal(productId) {
 
   state.modalProduct = product;
   state.modalQty = 1;
-  state.selectedSize = product.sizes[0];
+  state.selectedSize = firstAvailableSize(product);
 
   document.getElementById('modalImage').src = product.image;
   document.getElementById('modalImage').alt = product.name;
@@ -229,9 +243,11 @@ function openProductModal(productId) {
   document.getElementById('modalQty').textContent = '1';
 
   const sizesContainer = document.getElementById('modalSizes');
-  sizesContainer.innerHTML = product.sizes.map((size, i) =>
-    `<button class="size-btn ${i === 0 ? 'active' : ''}" onclick="selectSize('${size}', this)">${size}</button>`
-  ).join('');
+  sizesContainer.innerHTML = product.sizes.map((s) => {
+    const out = (s.stock === 0);
+    const active = (s.size === state.selectedSize);
+    return `<button class="size-btn ${active ? 'active' : ''} ${out ? 'out' : ''}" ${out ? 'disabled' : ''} onclick="selectSize('${s.size}', this)">${s.size}</button>`;
+  }).join('');
 
   document.getElementById('productModalOverlay').classList.add('active');
   document.body.style.overflow = 'hidden';
@@ -441,28 +457,6 @@ function initScrollEffects() {
     lastScrollY = scrollY;
   }, { passive: true });
 
-  // Intersection Observer for fade-in animations
-  const observerOptions = {
-    threshold: 0.1,
-    rootMargin: '0px 0px -50px 0px'
-  };
-
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.style.opacity = '1';
-        entry.target.style.transform = 'translateY(0)';
-      }
-    });
-  }, observerOptions);
-
-  // Observe product cards and feature cards
-  setTimeout(() => {
-    $$('.product-card, .feature-card').forEach(el => {
-      el.style.opacity = '0';
-      el.style.transform = 'translateY(20px)';
-      el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
-      observer.observe(el);
-    });
-  }, 100);
+  // Entrance animations are now pure CSS (see style.css) so cards can never
+  // get stuck invisible — nothing to do here anymore.
 }
