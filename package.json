@@ -2,11 +2,13 @@
   "name": "cv-luxury-shop",
   "version": "1.0.0",
   "private": true,
-  "description": "CV Luxury Shop - static storefront with Supabase backend",
+  "description": "CV Luxury Shop - storefront + API backend (Railway + PostgreSQL)",
   "scripts": {
-    "start": "serve -l tcp://0.0.0.0:${PORT:-3000}"
+    "start": "node server.js"
   },
   "dependencies": {
-    "serve": "^14.2.5"
+    "express": "^4.19.2",
+    "pg": "^8.12.0",
+    "jsonwebtoken": "^9.0.2"
   }
 }

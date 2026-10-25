@@ -1,16 +1,36 @@
 /* ========================================
-   CV LUXURY SHOP - Supabase Backend Layer
-   Shared across storefront + admin
+   CV LUXURY SHOP - API Data Layer (Railway)
+   Talks to the Node/Express backend (/api/*)
+   backed by PostgreSQL. Shared by all pages.
    ======================================== */
 
-const SUPABASE_URL = 'https://aokojvmuxpsrqcomgmze.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_8hCn6N_auPv562uNgkHuJA_qX1U9hea';
+const API = ''; // same origin (server serves both site + API)
+const TOKEN_KEY = 'cv_admin_token';
 
-// supabase-js (loaded via CDN) exposes window.supabase.createClient
-const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+function getToken() { return localStorage.getItem(TOKEN_KEY); }
+function setToken(t) { if (t) localStorage.setItem(TOKEN_KEY, t); else localStorage.removeItem(TOKEN_KEY); }
+
+async function apiGet(path, auth) {
+  const headers = {};
+  if (auth) headers.Authorization = 'Bearer ' + getToken();
+  const r = await fetch(API + path, { headers });
+  if (!r.ok) throw new Error('GET ' + path + ' -> ' + r.status);
+  return r.json();
+}
+
+async function apiSend(method, path, body, auth) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (auth) headers.Authorization = 'Bearer ' + getToken();
+  const r = await fetch(API + path, { method, headers, body: body ? JSON.stringify(body) : undefined });
+  if (!r.ok) {
+    let msg = method + ' ' + path + ' -> ' + r.status;
+    try { const j = await r.json(); if (j.error) msg = j.error; } catch (e) {}
+    throw new Error(msg);
+  }
+  return r.json().catch(() => ({}));
+}
 
 // ── Normalizers (handle values typed with commas, spaces or newlines) ──
-// Sizes are stored as [{ size: "36", stock: 10 }]. stock null = not tracked (always available).
 function normalizeSizes(arr) {
   const out = [];
   const add = (sz, stock) => {
@@ -24,26 +44,18 @@ function normalizeSizes(arr) {
     out.push({ size: sz, stock: s });
   };
   (Array.isArray(arr) ? arr : []).forEach(raw => {
-    if (raw && typeof raw === 'object' && raw.size != null) {
-      add(raw.size, raw.stock);
-      return;
-    }
-    // legacy string form
+    if (raw && typeof raw === 'object' && raw.size != null) { add(raw.size, raw.stock); return; }
     String(raw).split(/[,\n]+/).forEach(part => {
       part = part.trim();
       if (!part) return;
       if (/^[\d\s.]+$/.test(part) && /\s/.test(part)) {
         part.split(/\s+/).forEach(t => { if (t) add(t, null); });
-      } else {
-        add(part, null);
-      }
+      } else { add(part, null); }
     });
   });
   return out.length ? out : [{ size: 'One Size', stock: null }];
 }
 
-// Colors are stored as [{ color: "#000"/"Black", image: "url"|null }].
-// image is the product photo shown when that color is selected (optional).
 function isColorToken(x) {
   return /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(x) || /^[A-Za-z]{3,}$/.test(x);
 }
@@ -55,17 +67,13 @@ function normalizeColors(arr) {
     out.push({ color: val, image: (image && String(image).trim()) ? String(image).trim() : null });
   };
   (Array.isArray(arr) ? arr : []).forEach(raw => {
-    if (raw && typeof raw === 'object' && raw.color != null) {
-      add(raw.color, raw.image);
-      return;
-    }
-    // legacy string form — split on commas/space/slash/colon, drop emoji/punctuation
+    if (raw && typeof raw === 'object' && raw.color != null) { add(raw.color, raw.image); return; }
     String(raw).split(/[,\s\n/:]+/).forEach(x => add(x, null));
   });
   return out;
 }
 
-// ── Field mapping (DB snake_case <-> app camelCase) ──
+// ── Field mapping (DB snake_case -> app camelCase) ──
 function mapProductRow(r) {
   return {
     id: r.id,
@@ -83,103 +91,71 @@ function mapProductRow(r) {
   };
 }
 
-function productToRow(p) {
-  return {
-    id: p.id,
-    name: p.name,
-    code: p.code,
-    price: p.price,
-    original_price: p.originalPrice,
-    image: p.image,
-    category: p.category,
-    badge: p.badge,
-    colors: p.colors,
-    sizes: p.sizes,
-    description: p.description,
-    highlights: p.highlights
-  };
-}
-
 // ── Products ──
-// Light list for storefront/admin listings — excludes the heavy `colors`
-// (per-color images can be large) and other detail-only fields for speed.
-const LIST_COLS = 'id,name,code,price,original_price,image,category,badge,sizes';
-
 async function dbGetProducts() {
-  const { data, error } = await sb.from('products').select(LIST_COLS).order('id');
-  if (error) throw error;
-  return (data || []).map(mapProductRow);
+  const rows = await apiGet('/api/products');
+  return (rows || []).map(mapProductRow);
 }
 
-// Full single product (with colors + images) for the detail page.
 async function dbGetProduct(id) {
-  const { data, error } = await sb.from('products').select('*').eq('id', id).single();
-  if (error) throw error;
-  return mapProductRow(data);
+  const row = await apiGet('/api/products/' + encodeURIComponent(id));
+  return mapProductRow(row);
 }
 
 async function dbSaveProduct(p) {
-  const { error } = await sb.from('products').upsert(productToRow(p), { onConflict: 'id' });
-  if (error) throw error;
+  await apiSend('POST', '/api/products', p, true);
 }
 
 async function dbDeleteProduct(id) {
-  const { error } = await sb.from('products').delete().eq('id', id);
-  if (error) throw error;
+  await apiSend('DELETE', '/api/products/' + encodeURIComponent(id), null, true);
 }
 
 async function dbNextProductId() {
-  const { data, error } = await sb.from('products').select('id').order('id', { ascending: false }).limit(1);
-  if (error) throw error;
-  return (data && data.length ? Number(data[0].id) : 0) + 1;
+  const rows = await apiGet('/api/products');
+  const max = (rows || []).reduce((m, r) => Math.max(m, Number(r.id) || 0), 0);
+  return max + 1;
 }
 
 // ── Orders ──
 async function dbInsertOrder(order) {
-  const { error } = await sb.from('orders').insert({
-    id: order.id,
-    customer: order.customer,
-    payment: order.payment,
-    items: order.items,
-    subtotal: order.subtotal,
-    shipping: order.shipping,
-    discount: order.discount,
-    total: order.total,
-    status: order.status || 'pending'
-  });
-  if (error) throw error;
+  await apiSend('POST', '/api/orders', order, false);
 }
 
 async function dbGetOrders() {
-  const { data, error } = await sb.from('orders').select('*').order('created_at', { ascending: false });
-  if (error) throw error;
-  return (data || []).map(o => ({ ...o, date: o.created_at }));
+  const rows = await apiGet('/api/orders', true);
+  return (rows || []).map(o => ({ ...o, date: o.created_at }));
 }
 
 async function dbUpdateOrderStatus(id, status) {
-  const { error } = await sb.from('orders').update({ status }).eq('id', id);
-  if (error) throw error;
+  await apiSend('PATCH', '/api/orders/' + encodeURIComponent(id), { status }, true);
 }
 
 async function dbDeleteOrder(id) {
-  const { error } = await sb.from('orders').delete().eq('id', id);
-  if (error) throw error;
+  await apiSend('DELETE', '/api/orders/' + encodeURIComponent(id), null, true);
 }
 
 // ── Auth (admin) ──
 async function dbSignIn(email, password) {
-  return await sb.auth.signInWithPassword({ email, password });
+  try {
+    const res = await apiSend('POST', '/api/login', { email, password }, false);
+    setToken(res.token);
+    return { error: null };
+  } catch (e) {
+    return { error: { message: e.message || 'Invalid email or password' } };
+  }
 }
+
 async function dbSignOut() {
-  return await sb.auth.signOut();
+  setToken(null);
 }
+
 async function dbGetUser() {
-  const { data } = await sb.auth.getUser();
-  return data ? data.user : null;
+  if (!getToken()) return null;
+  try { await apiGet('/api/me', true); return { email: 'admin' }; }
+  catch (e) { setToken(null); return null; }
 }
 
 // ── Catalogue loader for storefront pages ──
-// Fills the global PRODUCTS array (declared in data.js) from the database.
 const CATALOGUE_CACHE = 'cv_catalogue_cache';
 
 async function loadCatalogue() {
@@ -190,7 +166,6 @@ async function loadCatalogue() {
     try { sessionStorage.setItem(CATALOGUE_CACHE, JSON.stringify(list)); } catch (e) {}
   } catch (e) {
     console.error('Catalogue load failed:', e);
-    // fall back to the last good list, then to bundled defaults
     let cached = null;
     try { cached = JSON.parse(sessionStorage.getItem(CATALOGUE_CACHE)); } catch (e2) {}
     if (Array.isArray(cached) && cached.length) {
