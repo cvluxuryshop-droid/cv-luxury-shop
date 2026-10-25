@@ -1,0 +1,12 @@
+{
+  "name": "cv-luxury-shop",
+  "version": "1.0.0",
+  "private": true,
+  "description": "CV Luxury Shop - static storefront with Supabase backend",
+  "scripts": {
+    "start": "serve -l tcp://0.0.0.0:${PORT:-3000}"
+  },
+  "dependencies": {
+    "serve": "^14.2.5"
+  }
+}
