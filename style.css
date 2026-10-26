@@ -1507,6 +1507,12 @@ main { animation: fadeIn 0.4s ease both; }
   color: var(--color-text);
 }
 
+.cart-item__meta {
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+  margin-bottom: 4px;
+}
+
 .cart-item__price {
   font-size: 0.85rem;
   color: var(--color-gold);

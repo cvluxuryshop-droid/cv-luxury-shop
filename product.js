@@ -339,38 +339,36 @@ function renderCartItems() {
   container.innerHTML = cart.map(item => {
     const p = getProduct(item.id);
     if (!p) return '';
+    const key = variantKey(item);
+    const meta = [item.size ? 'Size: ' + item.size : '', item.color ? 'Color: ' + item.color : ''].filter(Boolean).join(' · ');
     return `
       <div class="cart-item">
         <div class="cart-item__image"><img src="${p.image}" alt="${p.name}" width="70" height="70"></div>
         <div class="cart-item__info">
           <div class="cart-item__title">${p.name}</div>
+          ${meta ? `<div class="cart-item__meta">${meta}</div>` : ''}
           <div class="cart-item__price">${fmtBDT(p.price)}</div>
           <div class="cart-item__qty">
-            <button onclick="changeQty(${p.id}, -1)">−</button>
+            <button onclick="changeQty('${key}', -1)">−</button>
             <span>${item.qty}</span>
-            <button onclick="changeQty(${p.id}, 1)">+</button>
+            <button onclick="changeQty('${key}', 1)">+</button>
           </div>
         </div>
-        <button class="cart-item__remove" onclick="removeItem(${p.id})" aria-label="Remove">
+        <button class="cart-item__remove" onclick="removeItem('${key}')" aria-label="Remove">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>`;
   }).join('');
 }
 
-function changeQty(id, delta) {
-  const cart = getCart();
-  const item = cart.find(i => i.id === id);
-  if (!item) return;
-  item.qty += delta;
-  if (item.qty <= 0) { removeItem(id); return; }
-  setCart(cart);
+function changeQty(key, delta) {
+  changeCartLineQty(key, delta);
   updateCartUI();
   renderCartItems();
 }
 
-function removeItem(id) {
-  setCart(getCart().filter(i => i.id !== id));
+function removeItem(key) {
+  removeCartLine(key);
   updateCartUI();
   renderCartItems();
 }

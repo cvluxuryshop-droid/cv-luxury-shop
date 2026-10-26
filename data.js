@@ -255,19 +255,36 @@ function setCart(cart) {
   localStorage.setItem(CART_KEY, JSON.stringify(cart));
 }
 
+// A cart line is unique per product + size + colour (a "variant")
+function variantKey(item) {
+  return item.id + '|' + (item.size || '') + '|' + (item.color || '');
+}
+
 function addToCartShared(id, qty = 1, size = null, color = null) {
   id = Number(id);
   const product = getProduct(id);
   if (!product) return;
+  const line = { id, qty, size: size || firstAvailableSize(product), color: color || null };
   const cart = getCart();
-  const existing = cart.find(i => i.id === id);
+  const existing = cart.find(i => variantKey(i) === variantKey(line));
   if (existing) {
     existing.qty += qty;
-    if (size) existing.size = size;
-    if (color) existing.color = color;
   } else {
-    cart.push({ id, qty, size: size || firstAvailableSize(product), color: color || null });
+    cart.push(line);
   }
+  setCart(cart);
+}
+
+function removeCartLine(key) {
+  setCart(getCart().filter(i => variantKey(i) !== key));
+}
+
+function changeCartLineQty(key, delta) {
+  const cart = getCart();
+  const it = cart.find(i => variantKey(i) === key);
+  if (!it) return;
+  it.qty += delta;
+  if (it.qty <= 0) { removeCartLine(key); return; }
   setCart(cart);
 }
 

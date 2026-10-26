@@ -98,11 +98,12 @@ function addToCart(productId, qty = 1) {
     return;
   }
 
-  const existingItem = state.cart.find(item => item.id === productId);
+  const line = { id: productId, qty, size: state.selectedSize || firstAvailableSize(product), color: null };
+  const existingItem = state.cart.find(item => variantKey(item) === variantKey(line));
   if (existingItem) {
     existingItem.qty += qty;
   } else {
-    state.cart.push({ id: productId, qty: qty, size: state.selectedSize || firstAvailableSize(product) });
+    state.cart.push(line);
   }
 
   saveCart();
@@ -115,19 +116,19 @@ function buyNow(productId) {
   window.location.href = 'checkout.html';
 }
 
-function removeFromCart(productId) {
-  state.cart = state.cart.filter(item => item.id !== productId);
+function removeFromCart(key) {
+  state.cart = state.cart.filter(item => variantKey(item) !== key);
   saveCart();
   updateCartUI();
   renderCartItems();
 }
 
-function updateCartItemQty(productId, delta) {
-  const item = state.cart.find(i => i.id === productId);
+function updateCartItemQty(key, delta) {
+  const item = state.cart.find(i => variantKey(i) === key);
   if (!item) return;
   item.qty += delta;
   if (item.qty <= 0) {
-    removeFromCart(productId);
+    removeFromCart(key);
     return;
   }
   saveCart();
@@ -177,6 +178,8 @@ function renderCartItems() {
   container.innerHTML = state.cart.map(item => {
     const product = products.find(p => p.id === item.id);
     if (!product) return '';
+    const key = variantKey(item);
+    const meta = [item.size ? 'Size: ' + item.size : '', item.color ? 'Color: ' + item.color : ''].filter(Boolean).join(' · ');
     return `
       <div class="cart-item">
         <div class="cart-item__image">
@@ -184,14 +187,15 @@ function renderCartItems() {
         </div>
         <div class="cart-item__info">
           <div class="cart-item__title">${product.name}</div>
+          ${meta ? `<div class="cart-item__meta">${meta}</div>` : ''}
           <div class="cart-item__price">${product.price.toLocaleString()}৳</div>
           <div class="cart-item__qty">
-            <button onclick="updateCartItemQty(${product.id}, -1)">−</button>
+            <button onclick="updateCartItemQty('${key}', -1)">−</button>
             <span>${item.qty}</span>
-            <button onclick="updateCartItemQty(${product.id}, 1)">+</button>
+            <button onclick="updateCartItemQty('${key}', 1)">+</button>
           </div>
         </div>
-        <button class="cart-item__remove" onclick="removeFromCart(${product.id})" aria-label="Remove">
+        <button class="cart-item__remove" onclick="removeFromCart('${key}')" aria-label="Remove">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
