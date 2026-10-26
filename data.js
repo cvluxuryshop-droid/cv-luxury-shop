@@ -255,7 +255,7 @@ function setCart(cart) {
   localStorage.setItem(CART_KEY, JSON.stringify(cart));
 }
 
-function addToCartShared(id, qty = 1, size = null) {
+function addToCartShared(id, qty = 1, size = null, color = null) {
   id = Number(id);
   const product = getProduct(id);
   if (!product) return;
@@ -263,8 +263,10 @@ function addToCartShared(id, qty = 1, size = null) {
   const existing = cart.find(i => i.id === id);
   if (existing) {
     existing.qty += qty;
+    if (size) existing.size = size;
+    if (color) existing.color = color;
   } else {
-    cart.push({ id, qty, size: size || firstAvailableSize(product) });
+    cart.push({ id, qty, size: size || firstAvailableSize(product), color: color || null });
   }
   setCart(cart);
 }

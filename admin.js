@@ -268,7 +268,7 @@ function openOrder(id) {
             <img src="${i.image}" alt="${i.name}" width="46" height="46">
             <div class="d-item__info">
               <div class="d-item__name">${i.name}</div>
-              <div class="d-item__meta">Size: ${i.size || '-'} · Qty: ${i.qty}</div>
+              <div class="d-item__meta">Size: ${i.size || '-'} · Qty: ${i.qty}${i.color ? ' · Color: <span class="d-swatch" style="background:' + i.color + '"></span> ' + i.color : ''}</div>
             </div>
             <div class="d-item__price">${money(i.price * i.qty)}</div>
           </div>`).join('')}

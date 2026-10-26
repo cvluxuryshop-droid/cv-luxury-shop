@@ -53,7 +53,7 @@ function renderSummaryItems() {
         </div>
         <div class="summary__item-info">
           <div class="summary__item-name">${p.name}</div>
-          <div class="summary__item-meta">Size: ${item.size || '-'}</div>
+          <div class="summary__item-meta">Size: ${item.size || '-'}${item.color ? ' · Color: ' + item.color : ''}</div>
         </div>
         <div class="summary__item-price">${fmtBDT(p.price * item.qty)}</div>
       </div>`;
@@ -140,7 +140,7 @@ async function placeOrder() {
     payment,
     items: getCart().map(i => {
       const p = getProduct(i.id);
-      return { id: i.id, name: p ? p.name : 'Item', qty: i.qty, size: i.size, price: p ? p.price : 0, image: p ? p.image : '' };
+      return { id: i.id, name: p ? p.name : 'Item', qty: i.qty, size: i.size, color: i.color || null, price: p ? p.price : 0, image: p ? p.image : '' };
     }),
     subtotal, shipping: ship, discount, total,
     status: 'pending'

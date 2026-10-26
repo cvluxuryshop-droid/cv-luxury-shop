@@ -147,7 +147,7 @@ function renderMain() {
   // Add to cart
   $('#addCartBtn').addEventListener('click', () => {
     if (!canAddSelected()) return;
-    addToCartShared(current.id, qty, selectedSize);
+    addToCartShared(current.id, qty, selectedSize, selectedColorValue());
     updateCartUI();
     showToast(`${current.name} added to cart!`);
     openCart();
@@ -156,7 +156,7 @@ function renderMain() {
   // Buy now → straight to checkout
   $('#buyNowBtn').addEventListener('click', () => {
     if (!canAddSelected()) return;
-    addToCartShared(current.id, qty, selectedSize);
+    addToCartShared(current.id, qty, selectedSize, selectedColorValue());
     window.location.href = 'checkout.html';
   });
 
@@ -166,6 +166,12 @@ function renderMain() {
     $('#buyNowBtn').disabled = true;
     $('#addCartBtn').textContent = 'Out of Stock';
   }
+}
+
+// value (hex/name) of the currently selected colour, or null
+function selectedColorValue() {
+  const c = (current.colors || [])[selectedColor];
+  return c ? c.color : null;
 }
 
 // stock (number) of the currently selected size, or null if untracked

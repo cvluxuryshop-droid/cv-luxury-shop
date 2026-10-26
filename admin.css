@@ -231,6 +231,7 @@ svg { width: 20px; height: 20px; }
 .d-item__name { font-weight: 600; font-size: 0.86rem; }
 .d-item__meta { color: var(--muted); font-size: 0.78rem; }
 .d-item__price { font-weight: 700; font-size: 0.86rem; white-space: nowrap; }
+.d-swatch { display: inline-block; width: 11px; height: 11px; border-radius: 50%; border: 1px solid var(--border); vertical-align: middle; margin: 0 1px; }
 
 /* ── Toast ── */
 .toast {
