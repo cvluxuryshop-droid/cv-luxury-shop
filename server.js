@@ -160,7 +160,8 @@ app.delete('/api/orders/:id', requireAdmin, async (req, res) => {
 });
 
 // ── Static site ──
-app.use(express.static(__dirname));
+// `extensions: ['html']` lets /admin, /checkout, /product resolve to the .html files
+app.use(express.static(__dirname, { extensions: ['html'] }));
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
 // ── Start ──
