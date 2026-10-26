@@ -380,18 +380,46 @@ function initProductsUI() {
   $('#pfAddSize').addEventListener('click', () => addSizeRow('', ''));
   $('#pfAddColor').addEventListener('click', () => addColorRow('', ''));
 
-  // image upload → dataURL
-  $('#pfImageFile').addEventListener('change', (e) => {
+  // image upload → compressed dataURL (keeps images small & fast)
+  $('#pfImageFile').addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      $('#pfImage').value = reader.result;
-      showImagePreview(reader.result);
-    };
-    reader.readAsDataURL(file);
+    try {
+      const dataUrl = await compressImage(file);
+      $('#pfImage').value = dataUrl;
+      showImagePreview(dataUrl);
+    } catch (err) { console.error(err); toast('Could not process image'); }
   });
   $('#pfImage').addEventListener('input', () => showImagePreview($('#pfImage').value));
+}
+
+// Resize + compress an image file to a small JPEG data URL (much faster loading)
+function compressImage(file, maxDim = 1000, quality = 0.82) {
+  return new Promise((resolve, reject) => {
+    if (!file.type || !file.type.startsWith('image/')) { reject(new Error('Not an image')); return; }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        let w = img.width, h = img.height;
+        if (w > maxDim || h > maxDim) {
+          if (w >= h) { h = Math.round(h * maxDim / w); w = maxDim; }
+          else { w = Math.round(w * maxDim / h); h = maxDim; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, w, h);
+        ctx.drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = () => reject(new Error('Image load failed'));
+      img.src = reader.result;
+    };
+    reader.onerror = () => reject(new Error('File read failed'));
+    reader.readAsDataURL(file);
+  });
 }
 
 function showImagePreview(src) {
@@ -431,12 +459,14 @@ function addColorRow(color, image) {
   const imgField = row.querySelector('.pf-color-img');
   const preview = row.querySelector('.pf-color-preview');
   const showPrev = (src) => { if (src) { preview.src = src; preview.style.display = 'block'; } else { preview.style.display = 'none'; } };
-  fileInput.addEventListener('change', (e) => {
+  fileInput.addEventListener('change', async (e) => {
     const f = e.target.files[0];
     if (!f) return;
-    const rd = new FileReader();
-    rd.onload = () => { imgField.value = rd.result; showPrev(rd.result); };
-    rd.readAsDataURL(f);
+    try {
+      const dataUrl = await compressImage(f);
+      imgField.value = dataUrl;
+      showPrev(dataUrl);
+    } catch (err) { console.error(err); toast('Could not process image'); }
   });
   imgField.addEventListener('input', () => showPrev(imgField.value.trim()));
   row.querySelector('.pf-color-del').addEventListener('click', () => row.remove());
