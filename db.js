@@ -76,7 +76,7 @@ function normalizeColors(arr) {
 // ── Field mapping (DB snake_case -> app camelCase) ──
 function mapProductRow(r) {
   return {
-    id: r.id,
+    id: Number(r.id), // Postgres BIGINT comes back as a string; normalise to number
     name: r.name,
     code: r.code || '',
     price: Number(r.price),
