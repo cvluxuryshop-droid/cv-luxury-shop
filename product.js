@@ -66,7 +66,7 @@ function renderMain() {
       <div class="pdp__rating">
         <span class="stars">${starsHTML(rating.avg)}</span>
         <span class="pdp__rating-text">${rating.avg} (${rating.count} reviews)</span>
-        <span class="pdp__instock">● In Stock</span>
+        <span class="pdp__instock">${productOutOfStock(p) ? '● Out of Stock' : '● In Stock'}</span>
       </div>
       <div class="pdp__price">
         <span class="current">${fmtBDT(p.price)}</span>

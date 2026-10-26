@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // ── Render Products ──
 function renderProducts() {
-  const readyStock = products.filter(p => p.badge === 'in-stock');
+  const readyStock = products.filter(p => p.badge === 'in-stock' || p.badge === 'out-of-stock');
   const newArrivals = products.filter(p => p.badge === 'new' || p.badge === 'sale');
   const bestSellers = [products[0], products[3], products[5], products[9]].filter(Boolean);
 

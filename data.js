@@ -228,6 +228,7 @@ function firstAvailableSize(product) {
 
 // Product is out of stock when it has tracked sizes and all are 0
 function productOutOfStock(product) {
+  if (product && product.badge === 'out-of-stock') return true; // manually marked in admin
   const sizes = (product && product.sizes) || [];
   if (!sizes.length) return false;
   return sizes.every(s => s.stock === 0);

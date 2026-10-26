@@ -383,7 +383,7 @@ function renderProducts() {
           <td class="cell-sub">${p.category.replace('-', ' ')}</td>
           <td class="cell-strong">${money(p.price)}</td>
           <td class="cell-sub">${p.originalPrice ? '<s>' + money(p.originalPrice) + '</s>' : '-'}</td>
-          <td><span class="status status--${p.badge === 'sale' ? 'processing' : p.badge === 'new' ? 'shipped' : 'delivered'}">${p.badge === 'in-stock' ? 'In Stock' : p.badge}</span></td>
+          <td><span class="status status--${p.badge === 'sale' ? 'processing' : p.badge === 'new' ? 'shipped' : p.badge === 'out-of-stock' ? 'cancelled' : 'delivered'}">${p.badge === 'in-stock' ? 'In Stock' : p.badge === 'out-of-stock' ? 'Out of Stock' : p.badge}</span></td>
           <td class="row-actions">
             <button class="icon-btn edit-prod" data-id="${p.id}" title="Edit">
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
