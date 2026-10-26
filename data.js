@@ -163,7 +163,7 @@ const FAQS = [
   },
   {
     q: "What payment methods do you accept?",
-    a: "We accept bKash, Nagad, Visa, MasterCard, and Cash on Delivery (COD) across Bangladesh."
+    a: "We currently accept Cash on Delivery (COD) across Bangladesh. Pay when you receive your order."
   },
   {
     q: "Can I return or exchange a product?",
