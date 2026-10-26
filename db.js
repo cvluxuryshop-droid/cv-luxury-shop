@@ -134,6 +134,40 @@ async function dbDeleteOrder(id) {
   await apiSend('DELETE', '/api/orders/' + encodeURIComponent(id), null, true);
 }
 
+// ── Site settings (contact info) ──
+async function dbGetSettings() {
+  return apiGet('/api/settings');
+}
+
+async function dbSaveSettings(s) {
+  await apiSend('PUT', '/api/settings', s, true);
+}
+
+// Fills elements marked data-s-text / data-s-href with saved settings.
+// Blank or missing values leave the page's built-in default untouched.
+async function applySiteSettings() {
+  let s;
+  try { s = await dbGetSettings(); } catch (e) { return; }
+  const digits = (v) => String(v || '').replace(/[^\d]/g, '');
+  const vals = { ...s };
+  if (s.phone) vals.phoneRaw = '+' + digits(s.phone);
+  if (s.whatsapp || s.phone) vals.whatsappRaw = digits(s.whatsapp || s.phone);
+  document.querySelectorAll('[data-s-text]').forEach(el => {
+    const v = vals[el.dataset.sText];
+    if (v) el.textContent = v;
+  });
+  document.querySelectorAll('[data-s-href]').forEach(el => {
+    const tpl = el.dataset.sHref;
+    const key = (tpl.match(/\{(\w+)\}/) || [])[1];
+    if (tpl === '{' + key + '}' && !/^https?:\/\//i.test(vals[key] || '')) return; // social links must be http(s)
+    if (key && vals[key]) el.href = tpl.replace('{' + key + '}', vals[key]);
+  });
+}
+if (typeof document !== 'undefined') {
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', applySiteSettings);
+  else applySiteSettings();
+}
+
 // ── Auth (admin) ──
 async function dbSignIn(email, password) {
   try {

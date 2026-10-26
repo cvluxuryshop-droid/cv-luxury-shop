@@ -1,4 +1,4 @@
-/* ========================================
+﻿/* ========================================
    CV LUXURY SHOP - Admin Panel
    Order management (localStorage backed)
    ======================================== */
@@ -19,7 +19,7 @@ let orderQuery = '';
 // In-memory order cache (loaded from Supabase)
 const ORDERS = [];
 
-// ── Data helpers ──
+// â”€â”€ Data helpers â”€â”€
 function loadOrders() { return ORDERS; }
 async function refreshOrders() {
   try {
@@ -30,14 +30,14 @@ async function refreshOrders() {
     console.error('Load orders failed:', e);
   }
 }
-function money(n) { return Number(n || 0).toLocaleString() + '৳'; }
+function money(n) { return Number(n || 0).toLocaleString() + 'à§³'; }
 function fmtDate(iso) {
   const d = new Date(iso);
   return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) +
-    ' · ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    ' Â· ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 }
 
-// ── Auth (Supabase) ──
+// â”€â”€ Auth (Supabase) â”€â”€
 document.addEventListener('DOMContentLoaded', async () => {
   $('#loginForm').addEventListener('submit', onLogin);
   $('#logoutBtn').addEventListener('click', onLogout);
@@ -71,13 +71,14 @@ async function showAdmin() {
   initNav();
   initOrdersUI();
   initProductsUI();
+  $('#settingsForm').addEventListener('submit', onSaveSettings);
   $('#exportBtn').addEventListener('click', exportCSV);
   $('#menuToggle').addEventListener('click', () => $('#sidebar').classList.toggle('open'));
   await Promise.all([refreshOrders(), loadCatalogue()]);
   renderAll();
 }
 
-// ── Navigation ──
+// â”€â”€ Navigation â”€â”€
 function initNav() {
   document.addEventListener('click', (e) => {
     const link = e.target.closest('[data-view]');
@@ -94,9 +95,38 @@ function switchView(view) {
   $('#viewTitle').textContent = view.charAt(0).toUpperCase() + view.slice(1);
   $('#sidebar').classList.remove('open');
   if (view === 'products') renderProducts();
+  if (view === 'settings') loadSettingsForm();
 }
 
-// ── Render everything ──
+// â”€â”€ Settings (contact info) â”€â”€
+const SETTING_FIELDS = {
+  phone: '#stPhone', whatsapp: '#stWhatsapp', email: '#stEmail', address: '#stAddress',
+  facebook: '#stFacebook', instagram: '#stInstagram', youtube: '#stYoutube', tiktok: '#stTiktok'
+};
+
+async function loadSettingsForm() {
+  try {
+    const s = await dbGetSettings();
+    Object.entries(SETTING_FIELDS).forEach(([k, sel]) => { $(sel).value = s[k] || ''; });
+  } catch (e) { console.error('Load settings failed:', e); }
+}
+
+async function onSaveSettings(e) {
+  e.preventDefault();
+  const data = {};
+  Object.entries(SETTING_FIELDS).forEach(([k, sel]) => { data[k] = $(sel).value.trim(); });
+  const btn = $('#settingsForm').querySelector('button[type="submit"]');
+  btn.disabled = true;
+  try {
+    await dbSaveSettings(data);
+    toast('Settings saved');
+  } catch (err) {
+    toast('Failed to save settings');
+  }
+  btn.disabled = false;
+}
+
+// â”€â”€ Render everything â”€â”€
 function renderAll() {
   renderStats();
   renderRecent();
@@ -111,7 +141,7 @@ function updateNavBadge() {
   el.style.display = pending ? 'inline-flex' : 'none';
 }
 
-// ── Dashboard stats ──
+// â”€â”€ Dashboard stats â”€â”€
 function renderStats() {
   const orders = loadOrders();
   const revenue = orders.filter(o => o.status !== 'cancelled').reduce((s, o) => s + o.total, 0);
@@ -146,7 +176,7 @@ function renderRecent() {
   wireRowActions('#recentOrders');
 }
 
-// ── Orders view ──
+// â”€â”€ Orders view â”€â”€
 function initOrdersUI() {
   $('#orderSearch').addEventListener('input', (e) => { orderQuery = e.target.value.trim().toLowerCase(); renderOrders(); });
   $$('#statusFilters .chip').forEach(chip => {
@@ -231,7 +261,7 @@ function wireRowActions(scope) {
   });
 }
 
-// ── Order detail drawer ──
+// â”€â”€ Order detail drawer â”€â”€
 function openOrder(id) {
   const o = loadOrders().find(x => x.id === id);
   if (!o) return;
@@ -268,7 +298,7 @@ function openOrder(id) {
             <img src="${i.image}" alt="${i.name}" width="46" height="46">
             <div class="d-item__info">
               <div class="d-item__name">${i.name}</div>
-              <div class="d-item__meta">Size: ${i.size || '-'} · Qty: ${i.qty}${i.color ? ' · Color: <span class="d-swatch" style="background:' + i.color + '"></span> ' + i.color : ''}</div>
+              <div class="d-item__meta">Size: ${i.size || '-'} Â· Qty: ${i.qty}${i.color ? ' Â· Color: <span class="d-swatch" style="background:' + i.color + '"></span> ' + i.color : ''}</div>
             </div>
             <div class="d-item__price">${money(i.price * i.qty)}</div>
           </div>`).join('')}
@@ -328,7 +358,7 @@ async function deleteOrder(id, fromDrawer) {
   renderAll();
 }
 
-// ── Products (full CRUD) ──
+// â”€â”€ Products (full CRUD) â”€â”€
 let productQuery = '';
 
 function renderProducts() {
@@ -380,7 +410,7 @@ function initProductsUI() {
   $('#pfAddSize').addEventListener('click', () => addSizeRow('', ''));
   $('#pfAddColor').addEventListener('click', () => addColorRow('', ''));
 
-  // image upload → compressed dataURL (keeps images small & fast)
+  // image upload â†’ compressed dataURL (keeps images small & fast)
   $('#pfImageFile').addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -435,8 +465,8 @@ function addSizeRow(size, stock) {
   const stockVal = (stock === null || stock === undefined || stock === '') ? '' : stock;
   row.innerHTML = `
     <input type="text" class="pf-size-name" placeholder="Size (e.g. 40)" value="${sizeVal}">
-    <input type="number" class="pf-size-stock" placeholder="Stock (empty = ∞)" min="0" value="${stockVal}">
-    <button type="button" class="pf-size-del" aria-label="Remove size">×</button>`;
+    <input type="number" class="pf-size-stock" placeholder="Stock (empty = âˆž)" min="0" value="${stockVal}">
+    <button type="button" class="pf-size-del" aria-label="Remove size">Ã—</button>`;
   row.querySelector('.pf-size-del').addEventListener('click', () => row.remove());
   $('#pfSizesRows').appendChild(row);
 }
@@ -448,13 +478,13 @@ function addColorRow(color, image) {
   const iv = (image == null ? '' : String(image)).replace(/"/g, '&quot;');
   row.innerHTML = `
     <input type="text" class="pf-color-val" placeholder="#000 or Black" value="${cv}">
-    <input type="text" class="pf-color-img" placeholder="Image URL (or upload →)" value="${iv}">
+    <input type="text" class="pf-color-img" placeholder="Image URL (or upload â†’)" value="${iv}">
     <label class="pf-color-upload" title="Upload image">
       <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
       <input type="file" accept="image/*" hidden>
     </label>
     <img class="pf-color-preview" alt="" ${iv ? `src="${iv}"` : 'style="display:none"'}>
-    <button type="button" class="pf-color-del" aria-label="Remove color">×</button>`;
+    <button type="button" class="pf-color-del" aria-label="Remove color">Ã—</button>`;
   const fileInput = row.querySelector('input[type=file]');
   const imgField = row.querySelector('.pf-color-img');
   const preview = row.querySelector('.pf-color-preview');
@@ -590,7 +620,7 @@ async function deleteProduct(id) {
   toast('Product deleted');
 }
 
-// ── CSV export ──
+// â”€â”€ CSV export â”€â”€
 function exportCSV() {
   const orders = filteredOrders();
   if (!orders.length) { toast('No orders to export'); return; }
@@ -603,7 +633,7 @@ function exportCSV() {
     ]);
   });
   const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
-  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+  const blob = new Blob(['ï»¿' + csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -613,7 +643,7 @@ function exportCSV() {
   toast('CSV exported');
 }
 
-// ── Utilities ──
+// â”€â”€ Utilities â”€â”€
 function emptyState(title, sub) {
   return `<div class="empty">
     <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>

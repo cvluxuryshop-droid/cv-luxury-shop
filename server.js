@@ -55,6 +55,12 @@ async function initDb() {
       status      TEXT DEFAULT 'pending'
     );
   `);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS settings (
+      key   TEXT PRIMARY KEY,
+      value TEXT
+    );
+  `);
   console.log('DB ready');
 }
 
@@ -157,6 +163,32 @@ app.delete('/api/orders/:id', requireAdmin, async (req, res) => {
     await pool.query('DELETE FROM orders WHERE id = $1', [req.params.id]);
     res.json({ ok: true });
   } catch (e) { console.error(e); res.status(500).json({ error: 'Failed to delete order' }); }
+});
+
+// ── Site settings (contact info, social links) ──
+const SETTING_KEYS = ['phone', 'whatsapp', 'email', 'address', 'facebook', 'instagram', 'youtube', 'tiktok'];
+
+app.get('/api/settings', async (req, res) => {
+  try {
+    const { rows } = await pool.query('SELECT key, value FROM settings');
+    const out = {};
+    rows.forEach(r => { if (SETTING_KEYS.includes(r.key)) out[r.key] = r.value; });
+    res.json(out);
+  } catch (e) { console.error(e); res.status(500).json({ error: 'Failed to load settings' }); }
+});
+
+app.put('/api/settings', requireAdmin, async (req, res) => {
+  const body = req.body || {};
+  try {
+    for (const k of SETTING_KEYS) {
+      if (typeof body[k] !== 'string') continue;
+      await pool.query(`
+        INSERT INTO settings (key, value) VALUES ($1, $2)
+        ON CONFLICT (key) DO UPDATE SET value = $2
+      `, [k, body[k].trim().slice(0, 300)]);
+    }
+    res.json({ ok: true });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'Failed to save settings' }); }
 });
 
 // ── Static site ──
