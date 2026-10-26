@@ -73,7 +73,6 @@ function renderMain() {
         <span class="original">${fmtBDT(p.originalPrice)}</span>
         <span class="save">Save ${fmtBDT(p.originalPrice - p.price)}</span>
       </div>
-      <p class="pdp__shortdesc">${p.description}</p>
 
       <div class="pdp__option">
         <label>Color</label>
