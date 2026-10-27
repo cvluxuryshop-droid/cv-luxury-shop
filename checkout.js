@@ -147,7 +147,8 @@ async function placeOrder() {
       return { id: i.id, name: p ? p.name : 'Item', qty: i.qty, size: i.size, color: i.color || null, price: p ? p.price : 0, image: p ? p.image : '' };
     }),
     subtotal, shipping: ship, discount, total,
-    status: 'pending'
+    status: 'pending',
+    tracking: fbIdentifiers() // used server-side for Meta Conversions API; not stored
   };
 
   // Save order to Supabase
@@ -168,7 +169,7 @@ async function placeOrder() {
     content_ids: order.items.map(i => String(i.id)), content_type: 'product',
     contents: order.items.map(i => ({ id: String(i.id), quantity: i.qty, item_price: i.price })),
     num_items: order.items.reduce((s, i) => s + i.qty, 0), value: total, currency: 'BDT'
-  }, { eventID: orderId });
+  }, { eventID: orderId }, false); // server sends its own Purchase on order save, same event_id
 
   // Clear cart
   setCart([]);

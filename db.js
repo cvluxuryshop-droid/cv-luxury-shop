@@ -151,12 +151,43 @@ function initPixel(id) {
   if (window.fbq) return;
   !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
   fbq('init', id);
-  fbq('track', 'PageView');
+  trackPixel('PageView');
 }
 
-// Safe to call anywhere: does nothing when no Pixel ID is configured
-function trackPixel(name, params, opts) {
-  pixelReady.then(ok => { if (ok && window.fbq) fbq('track', name, params || {}, opts); });
+function getCookie(name) {
+  const m = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
+  return m ? decodeURIComponent(m[1]) : '';
+}
+
+// Meta browser id (_fbp) and click id (_fbc), used to match server events to the browser
+function fbIdentifiers() {
+  let fbc = getCookie('_fbc');
+  const click = new URLSearchParams(location.search).get('fbclid');
+  if (!fbc && click) fbc = 'fb.1.' + Date.now() + '.' + click;
+  return { fbp: getCookie('_fbp'), fbc, url: location.href };
+}
+
+function newEventId() {
+  return (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : Date.now() + '-' + Math.random().toString(36).slice(2);
+}
+
+// Safe to call anywhere: does nothing when no Pixel ID is configured.
+// Sends the event from the browser AND to our server (Conversions API) with a shared event_id.
+// Purchase is sent from the server when the order is saved, so pass opts.eventID and serverToo=false.
+function trackPixel(name, params, opts, serverToo = true) {
+  const eventID = (opts && opts.eventID) || newEventId();
+  pixelReady.then(ok => {
+    if (!ok) return;
+    if (window.fbq) fbq('track', name, params || {}, { eventID });
+    if (!serverToo) return;
+    setTimeout(() => { // short wait so Meta's _fbp cookie exists
+      const ids = fbIdentifiers();
+      fetch('/api/track', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, keepalive: true,
+        body: JSON.stringify({ event_name: name, event_id: eventID, event_source_url: ids.url, fbp: ids.fbp, fbc: ids.fbc, custom_data: params || {} })
+      }).catch(() => {});
+    }, 400);
+  });
 }
 
 // Fills elements marked data-s-text / data-s-href with saved settings.
