@@ -101,7 +101,7 @@ function switchView(view) {
 // ── Settings (contact info) ──
 const SETTING_FIELDS = {
   phone: '#stPhone', whatsapp: '#stWhatsapp', email: '#stEmail', address: '#stAddress',
-  facebook: '#stFacebook', instagram: '#stInstagram', youtube: '#stYoutube', tiktok: '#stTiktok'
+  facebook: '#stFacebook', instagram: '#stInstagram', youtube: '#stYoutube', tiktok: '#stTiktok', pixelId: '#stPixel'
 };
 
 async function loadSettingsForm() {

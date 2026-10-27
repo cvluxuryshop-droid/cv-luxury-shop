@@ -274,6 +274,9 @@ function addToCartShared(id, qty = 1, size = null, color = null) {
     cart.push(line);
   }
   setCart(cart);
+  if (typeof trackPixel === 'function') {
+    trackPixel('AddToCart', { content_ids: [String(id)], content_name: product.name, content_type: 'product', value: product.price * qty, currency: 'BDT' });
+  }
 }
 
 function removeCartLine(key) {

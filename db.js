@@ -143,11 +143,28 @@ async function dbSaveSettings(s) {
   await apiSend('PUT', '/api/settings', s, true);
 }
 
+// ── Meta Pixel (ID is set in admin → Settings) ──
+let _pixelResolve;
+const pixelReady = new Promise(r => { _pixelResolve = r; });
+
+function initPixel(id) {
+  if (window.fbq) return;
+  !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
+  fbq('init', id);
+  fbq('track', 'PageView');
+}
+
+// Safe to call anywhere: does nothing when no Pixel ID is configured
+function trackPixel(name, params, opts) {
+  pixelReady.then(ok => { if (ok && window.fbq) fbq('track', name, params || {}, opts); });
+}
+
 // Fills elements marked data-s-text / data-s-href with saved settings.
 // Blank or missing values leave the page's built-in default untouched.
 async function applySiteSettings() {
   let s;
-  try { s = await dbGetSettings(); } catch (e) { return; }
+  try { s = await dbGetSettings(); } catch (e) { _pixelResolve(false); return; }
+  if (s.pixelId && !/admin/i.test(location.pathname)) { initPixel(s.pixelId); _pixelResolve(true); } else { _pixelResolve(false); }
   const digits = (v) => String(v || '').replace(/[^\d]/g, '');
   const vals = { ...s };
   if (s.phone) vals.phoneRaw = '+' + digits(s.phone);

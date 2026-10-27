@@ -166,7 +166,7 @@ app.delete('/api/orders/:id', requireAdmin, async (req, res) => {
 });
 
 // ── Site settings (contact info, social links) ──
-const SETTING_KEYS = ['phone', 'whatsapp', 'email', 'address', 'facebook', 'instagram', 'youtube', 'tiktok'];
+const SETTING_KEYS = ['phone', 'whatsapp', 'email', 'address', 'facebook', 'instagram', 'youtube', 'tiktok', 'pixelId'];
 
 app.get('/api/settings', async (req, res) => {
   try {
@@ -185,7 +185,7 @@ app.put('/api/settings', requireAdmin, async (req, res) => {
       await pool.query(`
         INSERT INTO settings (key, value) VALUES ($1, $2)
         ON CONFLICT (key) DO UPDATE SET value = $2
-      `, [k, body[k].trim().slice(0, 300)]);
+      `, [k, k === 'pixelId' ? body[k].replace(/\D/g, '').slice(0, 20) : body[k].trim().slice(0, 300)]);
     }
     res.json({ ok: true });
   } catch (e) { console.error(e); res.status(500).json({ error: 'Failed to save settings' }); }

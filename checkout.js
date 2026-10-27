@@ -22,6 +22,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   renderSummaryItems();
   recalc();
+  trackPixel('InitiateCheckout', {
+    content_ids: getCart().map(i => String(i.id)), content_type: 'product',
+    num_items: cartCount(), value: cartTotal(), currency: 'BDT'
+  });
 
   $('#fArea').addEventListener('change', recalc);
   $('#couponBtn').addEventListener('click', applyCoupon);
@@ -159,6 +163,12 @@ async function placeOrder() {
     btn.textContent = 'Place Order';
     return;
   }
+
+  trackPixel('Purchase', {
+    content_ids: order.items.map(i => String(i.id)), content_type: 'product',
+    contents: order.items.map(i => ({ id: String(i.id), quantity: i.qty, item_price: i.price })),
+    num_items: order.items.reduce((s, i) => s + i.qty, 0), value: total, currency: 'BDT'
+  }, { eventID: orderId });
 
   // Clear cart
   setCart([]);

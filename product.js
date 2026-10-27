@@ -33,6 +33,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
+  trackPixel('ViewContent', { content_ids: [String(current.id)], content_name: current.name, content_type: 'product', value: current.price, currency: 'BDT' });
   selectedSize = firstAvailableSize(current);
   document.title = `${current.name} - CV Luxury Shop`;
   $('#breadcrumbName').textContent = current.name;
