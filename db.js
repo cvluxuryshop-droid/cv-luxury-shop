@@ -196,7 +196,8 @@ async function applySiteSettings() {
   let s;
   try { s = await dbGetSettings(); } catch (e) { _pixelResolve(false); return; }
   if (s.pixelId && !/admin/i.test(location.pathname)) { initPixel(s.pixelId); _pixelResolve(true); } else { _pixelResolve(false); }
-  const digits = (v) => String(v || '').replace(/[^\d]/g, '');
+  // digits only; a local 01XXXXXXXXX number gets Bangladesh's 88 country code (wa.me / tel: need it)
+  const digits = (v) => { const d = String(v || '').replace(/[^\d]/g, ''); return d.startsWith('0') ? '88' + d : d; };
   const vals = { ...s };
   if (s.phone) vals.phoneRaw = '+' + digits(s.phone);
   if (s.whatsapp || s.phone) vals.whatsappRaw = digits(s.whatsapp || s.phone);
