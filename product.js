@@ -121,18 +121,14 @@ function renderMain() {
             <button id="qtyPlus" aria-label="Increase quantity">+</button>
           </div>
           <button class="pdp__addcart" id="addCartBtn">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
-            <span>Add to Cart</span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 21H6.5a2 2 0 0 1-2-1.8L3.6 9.2A1.1 1.1 0 0 1 4.7 8h14.6a1.1 1.1 0 0 1 1.1 1.2l-.4 3.3"/><path d="M8.5 8V6.5a3.5 3.5 0 0 1 7 0V8"/><path d="M18.5 15.5v6M15.5 18.5h6"/></svg>
+            <span>Add to cart</span>
           </button>
         </div>
-        <button class="btn-primary pdp__buynow" id="buyNowBtn">Buy Now</button>
+        <button class="pdp__buynow" id="buyNowBtn">Buy Now</button>
       </div>
 
-      <ul class="pdp__assure">
-        <li>✓ 100% Authentic Guaranteed</li>
-        <li>✓ Cash on Delivery Available</li>
-        <li>✓ 7-Day Easy Return</li>
-      </ul>
+      ${aboutHTML(p)}
     </div>
   `;
 
@@ -283,6 +279,43 @@ function updateStockNote() {
   else { note.textContent = `In stock (${max} available)`; note.className = 'pdp__stock-note ok'; }
 }
 
+// ── Product description shown under the buy buttons ──
+// Admin writes it as free text:
+//   intro text...
+//   ✓ point / ✔️ point / • point / - point   (one per line, or several on one line)
+//   closing line (shown in bold)
+// Text before the first point → intro paragraph; text after the points → bold closing line.
+// Admin "Highlights", when filled, are used as the points instead.
+const BULLET_RE = /\s*(?:✔️|✔|✅|☑️|✓|•|➤|👉)\s*/u;
+const clean = (s) => String(s).replace(/[🌟⭐★️]/gu, ' ').replace(/\s+/g, ' ').replace(/^[\s\-–—*:]+|[\s\-–—:]+$/g, '').trim();
+const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+function parseDescription(text) {
+  const intro = [], points = [], outro = [];
+  String(text || '').split(/\r?\n/).forEach(line => {
+    line = line.replace(/^\s*[-*]\s+/, '✓ '); // "- point" / "* point" lines count as points too
+    const parts = line.split(BULLET_RE);
+    const head = clean(parts.shift());
+    if (head) (points.length ? outro : intro).push(head);
+    parts.map(clean).filter(Boolean).forEach(pt => points.push(pt));
+  });
+  return { intro: intro.join(' '), points, outro: outro.join(' ') };
+}
+
+function aboutHTML(p) {
+  const d = parseDescription(p.description);
+  const hl = (p.highlights || []).map(clean).filter(Boolean);
+  const points = hl.length ? hl : d.points;
+  if (!d.intro && !points.length && !d.outro) return '';
+  return `
+    <section class="pdp__about">
+      <h2 class="pdp__about-title">${esc(p.name)}</h2>
+      ${d.intro ? `<p class="pdp__about-intro">${esc(d.intro)}</p>` : ''}
+      ${points.length ? `<ul class="pdp__points">${points.map(pt => `<li>${esc(pt)}</li>`).join('')}</ul>` : ''}
+      ${d.outro ? `<p class="pdp__about-outro">${esc(d.outro)}</p>` : ''}
+    </section>`;
+}
+
 // ── Tabs ──
 function renderTabs() {
   const p = current;
@@ -290,15 +323,6 @@ function renderTabs() {
   const reviews = getReviews(p.id);
 
   $('#reviewTabCount').textContent = `(${rating.count})`;
-
-  // Description — just a few short points (highlights; else split the description into sentences)
-  let points = (p.highlights || []).map(h => String(h).trim()).filter(Boolean);
-  if (!points.length) points = String(p.description || '').split(/(?<=[.!?।])\s+/).map(s => s.trim().replace(/[.।]$/, '')).filter(Boolean);
-  $('#tab-desc').innerHTML = `
-    <ul class="pdp__points">
-      ${points.slice(0, 5).map(h => `<li>${h}</li>`).join('')}
-    </ul>
-  `;
 
   // Reviews
   $('#tab-reviews').innerHTML = `
