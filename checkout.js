@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     num_items: cartCount(), value: cartTotal(), currency: 'BDT'
   });
 
-  $('#fArea').addEventListener('change', recalc);
+  $$('input[name="area"]').forEach(r => r.addEventListener('change', recalc));
   $('#couponBtn').addEventListener('click', applyCoupon);
   $('#couponInput').addEventListener('keyup', (e) => { if (e.key === 'Enter') applyCoupon(); });
   $('#placeOrderBtn').addEventListener('click', placeOrder);
@@ -64,9 +64,13 @@ function renderSummaryItems() {
   }).join('');
 }
 
+function deliveryArea() {
+  return (document.querySelector('input[name="area"]:checked') || {}).value || 'inside';
+}
+
 function shippingFee(subtotal) {
   if (subtotal >= FREE_SHIP_THRESHOLD) return 0;
-  return $('#fArea').value === 'outside' ? SHIP_OUTSIDE : SHIP_INSIDE;
+  return deliveryArea() === 'outside' ? SHIP_OUTSIDE : SHIP_INSIDE;
 }
 
 function recalc() {
@@ -105,11 +109,10 @@ async function placeOrder() {
   const name = $('#fName').value.trim();
   const phone = $('#fPhone').value.trim();
   const address = $('#fAddress').value.trim();
-  const city = $('#fCity').value.trim();
 
-  if (!name || !phone || !address || !city) {
+  if (!name || !phone || !address) {
     showToast('Please fill in all required fields *');
-    [['#fName', name], ['#fPhone', phone], ['#fAddress', address], ['#fCity', city]].forEach(([sel, val]) => {
+    [['#fName', name], ['#fPhone', phone], ['#fAddress', address]].forEach(([sel, val]) => {
       $(sel).classList.toggle('invalid', !val);
     });
     document.querySelector('.checkout__form').scrollIntoView({ behavior: 'smooth' });
@@ -127,21 +130,13 @@ async function placeOrder() {
   const ship = shippingFee(subtotal);
   const discount = couponApplied ? Math.round(subtotal * 0.10) : 0;
   const total = subtotal + ship - discount;
-  const payment = (document.querySelector('input[name="pay"]:checked') || {}).value || 'cod';
+  const area = deliveryArea();
 
   const order = {
     id: orderId,
     date: new Date().toISOString(),
-    customer: {
-      name,
-      phone,
-      email: $('#fEmail').value.trim(),
-      address,
-      city,
-      area: $('#fArea').value,
-      notes: $('#fNotes').value.trim()
-    },
-    payment,
+    customer: { name, phone, address, area },
+    payment: 'cod',
     items: getCart().map(i => {
       const p = getProduct(i.id);
       return { id: i.id, name: p ? p.name : 'Item', qty: i.qty, size: i.size, color: i.color || null, price: p ? p.price : 0, image: p ? p.image : '' };

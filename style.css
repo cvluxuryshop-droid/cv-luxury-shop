@@ -1991,6 +1991,27 @@ main { animation: fadeIn 0.4s ease both; }
   aspect-ratio: 1/1;
 }
 .pdp__image img { width: 100%; height: 100%; object-fit: cover; }
+
+/* PDP slideshow */
+.pdp__track { display: flex; height: 100%; transition: transform 0.5s ease; }
+.pdp__track img { flex: 0 0 100%; width: 100%; height: 100%; object-fit: cover; user-select: none; }
+.pdp__nav {
+  position: absolute; top: 50%; transform: translateY(-50%); z-index: 2;
+  width: 38px; height: 38px; border-radius: 50%; border: none;
+  background: rgba(255,255,255,0.88); color: var(--color-dark);
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15); transition: background var(--transition-fast);
+}
+.pdp__nav:hover { background: #fff; color: var(--color-gold); }
+.pdp__nav--prev { left: 12px; }
+.pdp__nav--next { right: 12px; }
+.pdp__dots { position: absolute; bottom: 14px; left: 0; right: 0; display: flex; justify-content: center; gap: 8px; z-index: 2; }
+.pdp__dot { width: 9px; height: 9px; border-radius: 50%; border: none; padding: 0; background: rgba(255,255,255,0.6); box-shadow: 0 0 0 1px rgba(0,0,0,0.15); cursor: pointer; transition: all var(--transition-fast); }
+.pdp__dot.active { width: 24px; border-radius: 6px; background: var(--color-gold); }
+.pdp__thumbs { display: flex; gap: 10px; margin-top: 12px; }
+.pdp__thumb { width: 72px; height: 72px; padding: 0; border: 2px solid var(--color-border-light); border-radius: var(--radius-sm); overflow: hidden; background: var(--color-bg-secondary); cursor: pointer; opacity: 0.7; transition: all var(--transition-fast); }
+.pdp__thumb img { width: 100%; height: 100%; object-fit: cover; }
+.pdp__thumb.active, .pdp__thumb:hover { border-color: var(--color-gold); opacity: 1; }
 .pdp__badge {
   position: absolute;
   top: 16px; left: 16px;
@@ -2002,7 +2023,7 @@ main { animation: fadeIn 0.4s ease both; }
 }
 
 .pdp__code { font-size: 0.78rem; letter-spacing: 1px; text-transform: uppercase; color: var(--color-text-muted); margin-bottom: 8px; }
-.pdp__title { font-family: var(--font-heading); font-size: 2rem; font-weight: 700; line-height: 1.2; margin-bottom: 14px; }
+.pdp__title { font-family: 'Marcellus', var(--font-accent); font-size: 2.1rem; font-weight: 400; letter-spacing: 0.5px; line-height: 1.25; margin-bottom: 14px; }
 
 .pdp__rating { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; flex-wrap: wrap; }
 .pdp__rating .stars { color: var(--color-gold); display: inline-flex; }
@@ -2044,7 +2065,19 @@ main { animation: fadeIn 0.4s ease both; }
 .pdp__stock-note.low { color: var(--color-gold-dark); }
 .pdp__stock-note.out { color: var(--color-accent-red); }
 
-.pdp__buy { display: flex; align-items: stretch; gap: 12px; margin: 26px 0 20px; flex-wrap: wrap; }
+.pdp__buy { display: flex; flex-direction: column; gap: 12px; margin: 26px 0 20px; max-width: 420px; }
+.pdp__buy-row { display: flex; align-items: stretch; gap: 10px; }
+.pdp__buy-row .qty-control button { height: 42px; width: 38px; }
+.pdp__buy-row .qty-control span { min-width: 36px; }
+.pdp__addcart {
+  flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  height: 44px; padding: 0 16px; font-size: 0.88rem; font-weight: 700; cursor: pointer;
+  background: var(--color-bg); color: var(--color-gold); border: 1.5px solid var(--color-gold);
+  border-radius: var(--radius-sm); transition: all var(--transition-fast);
+}
+.pdp__addcart:hover { background: var(--color-gold); color: #fff; }
+.pdp__addcart:disabled, .pdp__buynow:disabled { opacity: 0.5; cursor: not-allowed; }
+.pdp__buynow { width: 100%; padding: 14px; font-size: 1rem; }
 .qty-control { display: flex; align-items: center; border: 1px solid var(--color-border); border-radius: var(--radius-sm); overflow: hidden; }
 .qty-control button { width: 42px; height: 48px; border: none; background: var(--color-bg-secondary); color: var(--color-text); font-size: 1.2rem; cursor: pointer; transition: background var(--transition-fast); }
 .qty-control button:hover { background: var(--color-gold); color: #fff; }
@@ -2059,7 +2092,6 @@ main { animation: fadeIn 0.4s ease both; }
 }
 .btn-primary:hover { filter: brightness(1.05); transform: translateY(-1px); box-shadow: var(--shadow-gold); }
 
-.pdp__addcart { flex: 1; min-width: 150px; }
 .btn-buy {
   flex: 1; min-width: 150px;
   background: var(--color-dark); color: #fff; border: none;
@@ -2093,6 +2125,10 @@ main { animation: fadeIn 0.4s ease both; }
 .pdp__highlights { list-style: none; display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px 24px; margin-bottom: 20px; }
 .pdp__highlights li { position: relative; padding-left: 22px; color: var(--color-text-muted); font-size: 0.9rem; }
 .pdp__highlights li::before { content: '✓'; position: absolute; left: 0; color: var(--color-gold); font-weight: 700; }
+
+.pdp__points { list-style: none; display: flex; flex-direction: column; gap: 10px; max-width: 640px; }
+.pdp__points li { position: relative; padding-left: 26px; color: var(--color-text-muted); font-size: 0.95rem; line-height: 1.5; }
+.pdp__points li::before { content: '✓'; position: absolute; left: 0; color: var(--color-gold); font-weight: 700; }
 
 .pdp__spec { width: 100%; border-collapse: collapse; margin-top: 10px; }
 .pdp__spec th, .pdp__spec td { text-align: left; padding: 12px 14px; border: 1px solid var(--color-border-light); font-size: 0.9rem; }
@@ -2172,6 +2208,23 @@ main { animation: fadeIn 0.4s ease both; }
 .summary__item-meta { font-size: 0.78rem; color: var(--color-text-muted); }
 .summary__item-price { font-weight: 700; font-size: 0.9rem; white-space: nowrap; }
 
+.ship-methods { display: flex; flex-direction: column; gap: 10px; }
+.ship-option { display: block; cursor: pointer; }
+.ship-option input { position: absolute; opacity: 0; pointer-events: none; }
+.ship-option__box { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 13px 16px 13px 44px; position: relative; border: 1px solid var(--color-border); border-radius: var(--radius-sm); transition: all var(--transition-fast); }
+.ship-option__box::before { content: ''; position: absolute; left: 16px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--color-border); background: var(--color-bg); }
+.ship-option__box strong { display: block; font-size: 0.95rem; }
+.ship-option__box small { color: var(--color-text-muted); font-size: 0.78rem; }
+.ship-option__box b { font-size: 1rem; color: var(--color-gold); white-space: nowrap; }
+.ship-option input:checked + .ship-option__box { border-color: var(--color-gold); background: rgba(255,94,3,0.05); box-shadow: 0 0 0 1px var(--color-gold); }
+.ship-option input:checked + .ship-option__box::before { border-color: var(--color-gold); box-shadow: inset 0 0 0 3px var(--color-bg); background: var(--color-gold); }
+.ship-option input:focus-visible + .ship-option__box { outline: 2px solid var(--color-gold); outline-offset: 2px; }
+.checkout__cod { margin-top: 6px; font-size: 0.88rem; color: var(--color-text-muted); }
+
+.summary__coupon-wrap { margin: 14px 0; font-size: 0.85rem; }
+.summary__coupon-wrap summary { cursor: pointer; color: var(--color-text-muted); }
+.summary__coupon-wrap summary:hover { color: var(--color-gold); }
+.summary__coupon-wrap .summary__coupon { margin: 10px 0 0; }
 .summary__coupon { display: flex; gap: 8px; margin: 16px 0; }
 .summary__coupon input { flex: 1; padding: 11px 12px; font-size: 0.85rem; background: var(--color-bg); color: var(--color-text); border: 1px solid var(--color-border); border-radius: var(--radius-sm); }
 .summary__coupon input:focus { outline: none; border-color: var(--color-gold); }
@@ -2204,8 +2257,8 @@ main { animation: fadeIn 0.4s ease both; }
   .form-row { grid-template-columns: 1fr; }
   .pdp__highlights { grid-template-columns: 1fr; }
   .pdp__title { font-size: 1.5rem; }
-  .pdp__buy { flex-direction: column; }
-  .qty-control { width: 100%; justify-content: space-between; }
+  .pdp__buy { max-width: none; }
+  .pdp__thumb { width: 60px; height: 60px; }
 }
 
 /* ========================================

@@ -282,7 +282,7 @@ function openOrder(id) {
         <div class="d-row"><span>Name</span><b>${c.name}</b></div>
         <div class="d-row"><span>Phone</span><b><a href="tel:${c.phone}">${c.phone}</a></b></div>
         ${c.email ? `<div class="d-row"><span>Email</span><b>${c.email}</b></div>` : ''}
-        <div class="d-row"><span>Address</span><b>${c.address}, ${c.city}</b></div>
+        <div class="d-row"><span>Address</span><b>${[c.address, c.city].filter(Boolean).join(', ')}</b></div>
         <div class="d-row"><span>Area</span><b>${c.area === 'outside' ? 'Outside Dhaka' : 'Inside Dhaka'}</b></div>
         ${c.notes ? `<div class="d-row"><span>Notes</span><b>${c.notes}</b></div>` : ''}
         <div class="d-row"><span>Payment</span><b>${PAY_LABEL[o.payment] || o.payment}</b></div>
@@ -628,7 +628,7 @@ function exportCSV() {
   orders.forEach(o => {
     rows.push([
       o.id, new Date(o.date).toLocaleString('en-GB'), o.customer.name, o.customer.phone,
-      o.customer.address, o.customer.city, PAY_LABEL[o.payment] || o.payment,
+      o.customer.address, o.customer.city || '', PAY_LABEL[o.payment] || o.payment,
       o.items.reduce((s, i) => s + i.qty, 0), o.total, STATUS_LABEL[o.status]
     ]);
   });

@@ -7,7 +7,7 @@
   <meta name="description" content="Secure checkout at CV Luxury Shop. Cash on Delivery available.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="style.css?v=12">
+  <link rel="stylesheet" href="style.css?v=13">
 </head>
 <body>
 
@@ -57,54 +57,41 @@
     <div class="checkout__grid" id="checkoutGrid">
       <!-- LEFT: Shipping form -->
       <div class="checkout__form">
-        <h2 class="checkout__heading">Shipping Information</h2>
+        <h2 class="checkout__heading">Delivery Details</h2>
         <form id="checkoutForm" novalidate>
-          <div class="form-row">
-            <div class="form-field">
-              <label>Full Name *</label>
-              <input type="text" id="fName" placeholder="Your full name" required>
-            </div>
-            <div class="form-field">
-              <label>Phone Number *</label>
-              <input type="tel" id="fPhone" placeholder="01XXXXXXXXX" required>
-            </div>
+          <div class="form-field">
+            <label for="fName">Your Name *</label>
+            <input type="text" id="fName" placeholder="Your full name" autocomplete="name" required>
           </div>
           <div class="form-field">
-            <label>Email (optional)</label>
-            <input type="email" id="fEmail" placeholder="you@example.com">
+            <label for="fPhone">Phone Number *</label>
+            <input type="tel" id="fPhone" placeholder="01XXXXXXXXX" inputmode="numeric" autocomplete="tel" maxlength="14" required>
           </div>
           <div class="form-field">
-            <label>Full Address *</label>
-            <textarea id="fAddress" rows="2" placeholder="House, road, area" required></textarea>
-          </div>
-          <div class="form-row">
-            <div class="form-field">
-              <label>City / District *</label>
-              <input type="text" id="fCity" placeholder="e.g. Dhaka" required>
-            </div>
-            <div class="form-field">
-              <label>Delivery Area *</label>
-              <select id="fArea">
-                <option value="inside">Inside Dhaka (৳60)</option>
-                <option value="outside">Outside Dhaka (৳120)</option>
-              </select>
-            </div>
-          </div>
-          <div class="form-field">
-            <label>Order Notes (optional)</label>
-            <textarea id="fNotes" rows="2" placeholder="Any special instructions"></textarea>
+            <label for="fAddress">Full Address *</label>
+            <textarea id="fAddress" rows="2" placeholder="House, road, area, district" autocomplete="street-address" required></textarea>
           </div>
 
-          <h2 class="checkout__heading" style="margin-top:28px;">Payment Method</h2>
-          <div class="pay-methods">
-            <label class="pay-option">
-              <input type="radio" name="pay" value="cod" checked>
-              <span class="pay-option__box">
-                <strong>Cash on Delivery</strong>
-                <small>Pay when you receive the product</small>
-              </span>
-            </label>
+          <div class="form-field">
+            <label>Delivery Method *</label>
+            <div class="ship-methods">
+              <label class="ship-option">
+                <input type="radio" name="area" value="inside" checked>
+                <span class="ship-option__box">
+                  <span><strong>Inside Dhaka</strong><small>1–2 days</small></span>
+                  <b>৳60</b>
+                </span>
+              </label>
+              <label class="ship-option">
+                <input type="radio" name="area" value="outside">
+                <span class="ship-option__box">
+                  <span><strong>Outside Dhaka</strong><small>3–5 days</small></span>
+                  <b>৳120</b>
+                </span>
+              </label>
+            </div>
           </div>
+          <p class="checkout__cod">💵 Cash on Delivery — pay when you receive the product</p>
         </form>
       </div>
 
@@ -112,12 +99,15 @@
       <aside class="checkout__summary">
         <h2 class="checkout__heading">Order Summary</h2>
         <div class="summary__items" id="summaryItems"></div>
-        <div class="summary__coupon">
-          <input type="text" id="couponInput" placeholder="Coupon code (try CVLUXURY)">
-          <button type="button" id="couponBtn">Apply</button>
-        </div>
+        <details class="summary__coupon-wrap">
+          <summary>Have a coupon code?</summary>
+          <div class="summary__coupon">
+            <input type="text" id="couponInput" placeholder="Coupon code">
+            <button type="button" id="couponBtn">Apply</button>
+          </div>
+        </details>
         <div class="summary__row"><span>Subtotal</span><span id="sumSubtotal">0৳</span></div>
-        <div class="summary__row"><span>Shipping</span><span id="sumShipping">0৳</span></div>
+        <div class="summary__row"><span>Delivery Charge</span><span id="sumShipping">0৳</span></div>
         <div class="summary__row summary__discount" id="discountRow" style="display:none;"><span>Discount</span><span id="sumDiscount">-0৳</span></div>
         <div class="summary__row summary__total"><span>Total</span><span id="sumTotal">0৳</span></div>
         <button type="button" class="btn-primary checkout__place" id="placeOrderBtn">Place Order</button>
@@ -161,7 +151,7 @@
 
 <script src="data.js?v=10"></script>
 <script src="db.js?v=12"></script>
-<script src="checkout.js?v=15"></script>
+<script src="checkout.js?v=16"></script>
 </body>
 </html>
 

@@ -54,12 +54,31 @@ function renderMain() {
   const discount = Math.round((1 - p.price / p.originalPrice) * 100);
   const rating = getRating(p.id);
 
+  slides = buildSlides(p);
+  const multi = slides.length > 1;
+
   $('#pdpMain').innerHTML = `
     <div class="pdp__gallery">
-      <div class="pdp__image">
+      <div class="pdp__image pdp__slider" id="pdpSlider">
         <span class="pdp__badge">-${discount}%</span>
-        <img src="${(p.colors[0] && p.colors[0].image) || p.image}" alt="${p.name}" id="pdpMainImg">
+        <div class="pdp__track" id="pdpTrack">
+          ${slides.map((s, i) => `<img src="${s.src}" alt="${p.name}" ${i ? 'loading="lazy"' : ''} draggable="false">`).join('')}
+        </div>
+        ${multi ? `
+          <button class="pdp__nav pdp__nav--prev" id="slidePrev" aria-label="Previous image">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <button class="pdp__nav pdp__nav--next" id="slideNext" aria-label="Next image">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+          <div class="pdp__dots" id="pdpDots">
+            ${slides.map((_, i) => `<button class="pdp__dot ${i === 0 ? 'active' : ''}" data-i="${i}" aria-label="Image ${i + 1}"></button>`).join('')}
+          </div>` : ''}
       </div>
+      ${multi ? `
+        <div class="pdp__thumbs" id="pdpThumbs">
+          ${slides.map((s, i) => `<button class="pdp__thumb ${i === 0 ? 'active' : ''}" data-i="${i}"><img src="${s.src}" alt="" loading="lazy"></button>`).join('')}
+        </div>` : ''}
     </div>
     <div class="pdp__info">
       <div class="pdp__code">Code: ${p.code}</div>
@@ -95,13 +114,18 @@ function renderMain() {
       </div>
 
       <div class="pdp__buy">
-        <div class="qty-control">
-          <button id="qtyMinus">−</button>
-          <span id="qtyVal">1</span>
-          <button id="qtyPlus">+</button>
+        <div class="pdp__buy-row">
+          <div class="qty-control">
+            <button id="qtyMinus" aria-label="Decrease quantity">−</button>
+            <span id="qtyVal">1</span>
+            <button id="qtyPlus" aria-label="Increase quantity">+</button>
+          </div>
+          <button class="pdp__addcart" id="addCartBtn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+            <span>Add to Cart</span>
+          </button>
         </div>
-        <button class="btn-primary pdp__addcart" id="addCartBtn">Add to Cart</button>
-        <button class="btn-buy pdp__buynow" id="buyNowBtn">Buy Now</button>
+        <button class="btn-primary pdp__buynow" id="buyNowBtn">Buy Now</button>
       </div>
 
       <ul class="pdp__assure">
@@ -112,17 +136,16 @@ function renderMain() {
     </div>
   `;
 
-  // Color select (also swaps the main image when that color has one)
+  // Color select (also jumps the slideshow to that color's photo)
   $$('#pdpColors .color-dot').forEach(dot => {
     dot.addEventListener('click', () => {
-      $$('#pdpColors .color-dot').forEach(d => d.classList.remove('active'));
-      dot.classList.add('active');
-      selectedColor = Number(dot.dataset.i);
-      const img = dot.dataset.img;
-      const mainImg = document.getElementById('pdpMainImg');
-      if (mainImg) mainImg.src = img ? img : current.image;
+      setColor(Number(dot.dataset.i));
+      const idx = slides.findIndex(s => s.color === selectedColor);
+      if (idx >= 0) { stopAutoplay(); goToSlide(idx); }
     });
   });
+
+  initSlider();
 
   // Size select
   $$('#pdpSizes .size-btn').forEach(btn => {
@@ -168,6 +191,69 @@ function renderMain() {
   }
 }
 
+// ── Image slideshow (one slide per color photo + the main image) ──
+let slides = [];
+let slideIdx = 0;
+let autoTimer = null;
+
+function buildSlides(p) {
+  const out = [];
+  (p.colors || []).forEach((c, i) => {
+    if (c.image && !out.some(s => s.src === c.image)) out.push({ src: c.image, color: i });
+  });
+  if (p.image && !out.some(s => s.src === p.image)) out.push({ src: p.image, color: null });
+  return out.length ? out : [{ src: p.image, color: null }];
+}
+
+function setColor(i) {
+  selectedColor = i;
+  $$('#pdpColors .color-dot').forEach(d => d.classList.toggle('active', Number(d.dataset.i) === i));
+}
+
+function goToSlide(i, fromUser) {
+  if (!slides.length) return;
+  slideIdx = (i + slides.length) % slides.length;
+  const track = $('#pdpTrack');
+  if (track) track.style.transform = `translateX(-${slideIdx * 100}%)`;
+  $$('#pdpDots .pdp__dot').forEach((d, n) => d.classList.toggle('active', n === slideIdx));
+  $$('#pdpThumbs .pdp__thumb').forEach((t, n) => t.classList.toggle('active', n === slideIdx));
+  // a photo the shopper picks themselves also selects its color
+  if (fromUser && slides[slideIdx].color !== null) setColor(slides[slideIdx].color);
+}
+
+function startAutoplay() {
+  if (slides.length < 2 || autoTimer) return;
+  autoTimer = setInterval(() => goToSlide(slideIdx + 1), 3500);
+}
+function stopAutoplay() { clearInterval(autoTimer); autoTimer = null; }
+
+function initSlider() {
+  slideIdx = 0;
+  if (slides.length < 2) return;
+  let userPicked = false; // once the shopper navigates, stop rotating for good
+  const userGo = (i) => { userPicked = true; stopAutoplay(); goToSlide(i, true); };
+  $('#slidePrev').addEventListener('click', () => userGo(slideIdx - 1));
+  $('#slideNext').addEventListener('click', () => userGo(slideIdx + 1));
+  $$('#pdpDots .pdp__dot').forEach(d => d.addEventListener('click', () => userGo(Number(d.dataset.i))));
+  $$('#pdpThumbs .pdp__thumb').forEach(t => t.addEventListener('click', () => userGo(Number(t.dataset.i))));
+
+  // swipe on phones
+  const slider = $('#pdpSlider');
+  let startX = null;
+  slider.addEventListener('touchstart', (e) => { startX = e.touches[0].clientX; }, { passive: true });
+  slider.addEventListener('touchend', (e) => {
+    if (startX === null) return;
+    const dx = e.changedTouches[0].clientX - startX;
+    if (Math.abs(dx) > 40) userGo(slideIdx + (dx < 0 ? 1 : -1));
+    startX = null;
+  });
+
+  // pause while the pointer is over the photo
+  slider.addEventListener('mouseenter', stopAutoplay);
+  slider.addEventListener('mouseleave', () => { if (!userPicked) startAutoplay(); });
+  startAutoplay();
+}
+
 // value (hex/name) of the currently selected colour, or null
 function selectedColorValue() {
   const c = (current.colors || [])[selectedColor];
@@ -205,19 +291,13 @@ function renderTabs() {
 
   $('#reviewTabCount').textContent = `(${rating.count})`;
 
-  // Description
+  // Description — just a few short points (highlights; else split the description into sentences)
+  let points = (p.highlights || []).map(h => String(h).trim()).filter(Boolean);
+  if (!points.length) points = String(p.description || '').split(/(?<=[.!?।])\s+/).map(s => s.trim().replace(/[.।]$/, '')).filter(Boolean);
   $('#tab-desc').innerHTML = `
-    <p>${p.description}</p>
-    <h4>Highlights</h4>
-    <ul class="pdp__highlights">
-      ${(p.highlights || []).map(h => `<li>${h}</li>`).join('')}
+    <ul class="pdp__points">
+      ${points.slice(0, 5).map(h => `<li>${h}</li>`).join('')}
     </ul>
-    <table class="pdp__spec">
-      <tr><th>Product Code</th><td>${p.code}</td></tr>
-      <tr><th>Category</th><td>${p.category.replace('-', ' ')}</td></tr>
-      <tr><th>Available Sizes</th><td>${p.sizes.join(', ')}</td></tr>
-      <tr><th>Warranty</th><td>Authenticity guaranteed</td></tr>
-    </table>
   `;
 
   // Reviews
