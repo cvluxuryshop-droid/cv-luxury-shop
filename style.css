@@ -608,7 +608,7 @@ input, select, textarea {
   position: relative;
   border-radius: var(--radius-lg);
   overflow: hidden;
-  aspect-ratio: 16/6.5;
+  aspect-ratio: 1600/595;
   cursor: pointer;
 }
 
@@ -2428,7 +2428,7 @@ main { animation: fadeIn 0.4s ease both; }
   }
 
   .hero__banner {
-    aspect-ratio: 16/9;
+    aspect-ratio: 1600/595;
     border-radius: var(--radius-md);
   }
 
