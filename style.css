@@ -2088,7 +2088,7 @@ main { animation: fadeIn 0.4s ease both; }
 
 /* About / description under the buttons */
 .pdp__about { margin-top: 26px; }
-.pdp__about-title { font-family: 'Marcellus', var(--font-accent); font-size: 1.9rem; font-weight: 700; -webkit-text-stroke: 0.9px currentColor; letter-spacing: 0.5px; line-height: 1.25; margin-bottom: 14px; color: var(--color-text); }
+.pdp__about-title { font-family: 'Marcellus', var(--font-accent); font-size: 1.9rem; font-weight: 700; -webkit-text-stroke: 1.6px currentColor; letter-spacing: 0.5px; line-height: 1.25; margin-bottom: 14px; color: var(--color-text); }
 .pdp__about-intro { color: var(--color-text); font-size: 1rem; line-height: 1.7; margin-bottom: 14px; }
 .pdp__about-outro { font-weight: 700; font-size: 1rem; margin-top: 16px; color: var(--color-text); }
 .qty-control { display: flex; align-items: center; border: 1px solid var(--color-border); border-radius: var(--radius-sm); overflow: hidden; }
