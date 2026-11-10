@@ -2023,7 +2023,7 @@ main { animation: fadeIn 0.4s ease both; }
 }
 
 .pdp__code { font-size: 0.78rem; letter-spacing: 1px; text-transform: uppercase; color: var(--color-text-muted); margin-bottom: 8px; }
-.pdp__title { font-family: 'Marcellus', var(--font-accent); font-size: 2.1rem; font-weight: 400; letter-spacing: 0.5px; line-height: 1.25; margin-bottom: 14px; }
+.pdp__title { font-family: 'Marcellus', var(--font-accent); font-size: 2.1rem; font-weight: 700; -webkit-text-stroke: 1.6px currentColor; letter-spacing: 0.5px; line-height: 1.25; margin-bottom: 14px; }
 
 .pdp__rating { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; flex-wrap: wrap; }
 .pdp__rating .stars { color: var(--color-gold); display: inline-flex; }
