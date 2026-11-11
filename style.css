@@ -2617,3 +2617,32 @@ main { animation: fadeIn 0.4s ease both; }
   animation: skeleton-loading 1.5s ease-in-out infinite;
   border-radius: var(--radius-sm);
 }
+
+/* ========================================
+   UX refinements (accessibility, touch, polish)
+   ======================================== */
+html { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: rgba(255, 94, 3, 0.12); }
+
+/* Keyboard focus rings (outline was removed on inputs; restore visible focus) */
+:focus-visible { outline: 2px solid var(--color-gold); outline-offset: 2px; border-radius: var(--radius-sm); }
+input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid var(--color-gold); outline-offset: 1px; }
+input:focus, select:focus, textarea:focus { border-color: var(--color-gold); box-shadow: 0 0 0 3px rgba(255, 94, 3, 0.14); }
+
+/* Better line breaks for headings & titles */
+h1, h2, h3, .pdp__title, .pdp__about-title, .product-card__title { text-wrap: balance; }
+
+/* Touch targets >= 44px */
+.header__actions .action-btn { width: 44px; height: 44px; }
+.pdp__sizes .size-btn { min-width: 48px; min-height: 44px; }
+.pdp__colors .color-dot { width: 34px; height: 34px; }
+.product-card__colors .color-dot { position: relative; }
+.product-card__colors .color-dot::after { content: ''; position: absolute; inset: -10px; }
+
+/* Smoother press feedback */
+.size-btn:active, .color-dot:active, .action-btn:active { transform: scale(0.94); }
+
+/* Selected size/color feel */
+.pdp__sizes .size-btn.active { box-shadow: 0 4px 12px rgba(255, 94, 3, 0.28); }
+
+/* Prices: aligned digits */
+.product-card__price, .pdp__price { font-variant-numeric: tabular-nums; }
