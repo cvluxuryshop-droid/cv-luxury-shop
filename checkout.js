@@ -149,14 +149,14 @@ async function placeOrder() {
   // Save order to Supabase
   const btn = $('#placeOrderBtn');
   btn.disabled = true;
-  btn.textContent = 'অর্ডার হচ্ছে...';
+  btn.textContent = 'Placing order...';
   try {
     await dbInsertOrder(order);
   } catch (err) {
     console.error(err);
     showToast('অর্ডার সম্পন্ন করা যায়নি। আবার চেষ্টা করুন।');
     btn.disabled = false;
-    btn.textContent = 'অর্ডার কনফার্ম করুন';
+    btn.textContent = 'Place Order';
     return;
   }
 
