@@ -2,7 +2,7 @@
    CV LUXURY SHOP - Premium Design System
    ======================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&family=Cormorant+Garamond:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
 
 /* ── CSS Custom Properties ── */
 :root {
@@ -25,9 +25,9 @@
   --color-dark: #1a1a1a;
   --color-overlay: rgba(0, 0, 0, 0.5);
 
-  --font-heading: 'Playfair Display', Georgia, serif;
+  --font-heading: 'Poppins', var(--font-body);
   --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-accent: 'Cormorant Garamond', Georgia, serif;
+  --font-accent: 'Poppins', var(--font-body);
 
   --container-max: 1200px;
   --header-height: 60px;
