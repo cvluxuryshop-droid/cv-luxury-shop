@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Checkout - CV Luxury Shop</title>
+  <title>চেকআউট - CV Luxury Shop</title>
   <meta name="description" content="Secure checkout at CV Luxury Shop. Cash on Delivery available.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,7 +13,7 @@
 
 <!-- ANNOUNCEMENT BAR -->
 <div class="announcement-bar">
-  ✨ Free Shipping on Orders Over ৳5,000 — Use Code: CVLUXURY
+  ✨ ৫,০০০৳ এর বেশি অর্ডারে ফ্রি ডেলিভারি — কোড: CVLUXURY
 </div>
 
 <!-- HEADER -->
@@ -27,11 +27,11 @@
         </a>
       </div>
       <nav class="header__nav">
-        <a href="index.html" class="nav-link">Home</a>
-        <a href="index.html#shop" class="nav-link">Shop</a>
+        <a href="index.html" class="nav-link">হোম</a>
+        <a href="index.html#shop" class="nav-link">শপ</a>
       </nav>
       <div class="header__actions">
-        <a class="action-btn" href="index.html" aria-label="Shopping cart">
+        <a class="action-btn" href="index.html" aria-label="কার্ট">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
           <span class="badge" id="cartCount">0</span>
         </a>
@@ -44,74 +44,74 @@
   <div class="container">
 
     <nav class="breadcrumb">
-      <a href="index.html">Home</a> <span>/</span>
-      <span>Checkout</span>
+      <a href="index.html">হোম</a> <span>/</span>
+      <span>চেকআউট</span>
     </nav>
 
     <div class="checkout__steps">
-      <span class="step done">1. Cart</span>
-      <span class="step active">2. Checkout</span>
-      <span class="step">3. Confirmation</span>
+      <span class="step done">১. কার্ট</span>
+      <span class="step active">২. চেকআউট</span>
+      <span class="step">৩. কনফার্মেশন</span>
     </div>
 
     <div class="checkout__grid" id="checkoutGrid">
       <!-- LEFT: Shipping form -->
       <div class="checkout__form">
-        <h2 class="checkout__heading">Delivery Details</h2>
+        <h2 class="checkout__heading">ডেলিভারির তথ্য</h2>
         <form id="checkoutForm" novalidate>
           <div class="form-field">
-            <label for="fName">Your Name *</label>
-            <input type="text" id="fName" placeholder="Your full name" autocomplete="name" required>
+            <label for="fName">আপনার নাম *</label>
+            <input type="text" id="fName" placeholder="আপনার পূর্ণ নাম" autocomplete="name" required>
           </div>
           <div class="form-field">
-            <label for="fPhone">Phone Number *</label>
+            <label for="fPhone">মোবাইল নাম্বার *</label>
             <input type="tel" id="fPhone" placeholder="01XXXXXXXXX" inputmode="numeric" autocomplete="tel" maxlength="14" required>
           </div>
           <div class="form-field">
-            <label for="fAddress">Full Address *</label>
-            <textarea id="fAddress" rows="2" placeholder="House, road, area, district" autocomplete="street-address" required></textarea>
+            <label for="fAddress">সম্পূর্ণ ঠিকানা *</label>
+            <textarea id="fAddress" rows="2" placeholder="বাসা, রোড, এলাকা, জেলা" autocomplete="street-address" required></textarea>
           </div>
 
           <div class="form-field">
-            <label>Delivery Method *</label>
+            <label>ডেলিভারি পদ্ধতি *</label>
             <div class="ship-methods">
               <label class="ship-option">
                 <input type="radio" name="area" value="inside" checked>
                 <span class="ship-option__box">
-                  <span><strong>Inside Dhaka</strong><small>1–2 days</small></span>
+                  <span><strong>ঢাকার ভেতরে</strong><small>১–২ দিন</small></span>
                   <b>৳60</b>
                 </span>
               </label>
               <label class="ship-option">
                 <input type="radio" name="area" value="outside">
                 <span class="ship-option__box">
-                  <span><strong>Outside Dhaka</strong><small>3–5 days</small></span>
+                  <span><strong>ঢাকার বাইরে</strong><small>৩–৫ দিন</small></span>
                   <b>৳120</b>
                 </span>
               </label>
             </div>
           </div>
-          <p class="checkout__cod">💵 Cash on Delivery — pay when you receive the product</p>
+          <p class="checkout__cod">💵 ক্যাশ অন ডেলিভারি — পণ্য হাতে পেয়ে টাকা দিন</p>
         </form>
       </div>
 
       <!-- RIGHT: Order summary -->
       <aside class="checkout__summary">
-        <h2 class="checkout__heading">Order Summary</h2>
+        <h2 class="checkout__heading">অর্ডারের সারসংক্ষেপ</h2>
         <div class="summary__items" id="summaryItems"></div>
         <details class="summary__coupon-wrap">
-          <summary>Have a coupon code?</summary>
+          <summary>কুপন কোড আছে?</summary>
           <div class="summary__coupon">
-            <input type="text" id="couponInput" placeholder="Coupon code">
-            <button type="button" id="couponBtn">Apply</button>
+            <input type="text" id="couponInput" placeholder="কুপন কোড">
+            <button type="button" id="couponBtn">প্রয়োগ করুন</button>
           </div>
         </details>
-        <div class="summary__row"><span>Subtotal</span><span id="sumSubtotal">0৳</span></div>
-        <div class="summary__row"><span>Delivery Charge</span><span id="sumShipping">0৳</span></div>
-        <div class="summary__row summary__discount" id="discountRow" style="display:none;"><span>Discount</span><span id="sumDiscount">-0৳</span></div>
-        <div class="summary__row summary__total"><span>Total</span><span id="sumTotal">0৳</span></div>
-        <button type="button" class="btn-primary checkout__place" id="placeOrderBtn">Place Order</button>
-        <a href="index.html#shop" class="checkout__continue">← Continue Shopping</a>
+        <div class="summary__row"><span>সাবটোটাল</span><span id="sumSubtotal">0৳</span></div>
+        <div class="summary__row"><span>ডেলিভারি চার্জ</span><span id="sumShipping">0৳</span></div>
+        <div class="summary__row summary__discount" id="discountRow" style="display:none;"><span>ডিসকাউন্ট</span><span id="sumDiscount">-0৳</span></div>
+        <div class="summary__row summary__total"><span>সর্বমোট</span><span id="sumTotal">0৳</span></div>
+        <button type="button" class="btn-primary checkout__place" id="placeOrderBtn">অর্ডার কনফার্ম করুন</button>
+        <a href="index.html#shop" class="checkout__continue">← শপিং চালিয়ে যান</a>
       </aside>
     </div>
 
@@ -120,10 +120,10 @@
       <div class="order-success__icon">
         <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
       </div>
-      <h2>Order Placed Successfully!</h2>
-      <p>Thank you for shopping with CV Luxury Shop. Your order <strong id="orderId"></strong> has been received.</p>
-      <p class="muted">We will call you shortly on your given number to confirm the delivery.</p>
-      <a href="index.html" class="btn-primary">Back to Home</a>
+      <h2>আপনার অর্ডার সফলভাবে সম্পন্ন হয়েছে!</h2>
+      <p>CV Luxury Shop থেকে কেনাকাটার জন্য ধন্যবাদ। আপনার অর্ডার <strong id="orderId"></strong> গ্রহণ করা হয়েছে।</p>
+      <p class="muted">ডেলিভারি নিশ্চিত করতে আমরা শীঘ্রই আপনার দেওয়া নাম্বারে কল করব।</p>
+      <a href="index.html" class="btn-primary">হোমে ফিরে যান</a>
     </div>
 
   </div>
@@ -133,9 +133,9 @@
 <footer class="footer">
   <div class="container">
     <div class="footer__bottom" style="border:none;padding-top:30px;">
-      <p>&copy; 2026 CV Luxury Shop. All Rights Reserved.</p>
+      <p>&copy; 2026 CV Luxury Shop. সর্বস্বত্ব সংরক্ষিত।</p>
       <div class="payment-methods">
-        <span>Cash on Delivery</span>
+        <span>ক্যাশ অন ডেলিভারি</span>
       </div>
     </div>
   </div>
@@ -151,7 +151,7 @@
 
 <script src="data.js?v=10"></script>
 <script src="db.js?v=12"></script>
-<script src="checkout.js?v=16"></script>
+<script src="checkout.js?v=17"></script>
 </body>
 </html>
 

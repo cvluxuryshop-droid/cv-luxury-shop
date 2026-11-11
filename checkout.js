@@ -37,9 +37,9 @@ function renderEmpty() {
   $('#checkoutGrid').innerHTML = `
     <div class="checkout__empty">
       <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
-      <h2>Your cart is empty</h2>
-      <p>Add some products before checking out.</p>
-      <a href="index.html#shop" class="btn-primary">Start Shopping</a>
+      <h2>আপনার কার্ট খালি</h2>
+      <p>চেকআউটের আগে কিছু পণ্য যোগ করুন।</p>
+      <a href="index.html#shop" class="btn-primary">শপিং শুরু করুন</a>
     </div>`;
   document.querySelector('.checkout__steps').style.display = 'none';
 }
@@ -57,7 +57,7 @@ function renderSummaryItems() {
         </div>
         <div class="summary__item-info">
           <div class="summary__item-name">${p.name}</div>
-          <div class="summary__item-meta">Size: ${item.size || '-'}${item.color ? ' · Color: ' + item.color : ''}</div>
+          <div class="summary__item-meta">সাইজ: ${item.size || '-'}${item.color ? ' · কালার: ' + item.color : ''}</div>
         </div>
         <div class="summary__item-price">${fmtBDT(p.price * item.qty)}</div>
       </div>`;
@@ -82,7 +82,7 @@ function recalc() {
   const total = subtotal + ship - discount;
 
   $('#sumSubtotal').textContent = fmtBDT(subtotal);
-  $('#sumShipping').textContent = ship === 0 ? 'FREE' : fmtBDT(ship);
+  $('#sumShipping').textContent = ship === 0 ? 'ফ্রি' : fmtBDT(ship);
   if (couponApplied) {
     $('#discountRow').style.display = 'flex';
     $('#sumDiscount').textContent = '-' + fmtBDT(discount);
@@ -95,12 +95,12 @@ function recalc() {
 function applyCoupon() {
   const code = $('#couponInput').value.trim().toUpperCase();
   if (code === 'CVLUXURY') {
-    if (couponApplied) { showToast('Coupon already applied'); return; }
+    if (couponApplied) { showToast('কুপন আগেই প্রয়োগ করা হয়েছে'); return; }
     couponApplied = true;
-    showToast('Coupon applied — 10% off! 🎉');
+    showToast('কুপন প্রয়োগ হয়েছে — ১০% ছাড়! 🎉');
     recalc();
   } else {
-    showToast('Invalid coupon code');
+    showToast('কুপন কোডটি সঠিক নয়');
   }
 }
 
@@ -111,7 +111,7 @@ async function placeOrder() {
   const address = $('#fAddress').value.trim();
 
   if (!name || !phone || !address) {
-    showToast('Please fill in all required fields *');
+    showToast('অনুগ্রহ করে সব প্রয়োজনীয় তথ্য পূরণ করুন *');
     [['#fName', name], ['#fPhone', phone], ['#fAddress', address]].forEach(([sel, val]) => {
       $(sel).classList.toggle('invalid', !val);
     });
@@ -119,7 +119,7 @@ async function placeOrder() {
     return;
   }
   if (!/^01\d{9}$/.test(phone.replace(/\s|-/g, ''))) {
-    showToast('Please enter a valid 11-digit phone number');
+    showToast('অনুগ্রহ করে সঠিক ১১ ডিজিটের মোবাইল নাম্বার দিন');
     $('#fPhone').classList.add('invalid');
     return;
   }
@@ -149,14 +149,14 @@ async function placeOrder() {
   // Save order to Supabase
   const btn = $('#placeOrderBtn');
   btn.disabled = true;
-  btn.textContent = 'Placing order...';
+  btn.textContent = 'অর্ডার হচ্ছে...';
   try {
     await dbInsertOrder(order);
   } catch (err) {
     console.error(err);
-    showToast('Could not place order. Please try again.');
+    showToast('অর্ডার সম্পন্ন করা যায়নি। আবার চেষ্টা করুন।');
     btn.disabled = false;
-    btn.textContent = 'Place Order';
+    btn.textContent = 'অর্ডার কনফার্ম করুন';
     return;
   }
 
@@ -172,9 +172,9 @@ async function placeOrder() {
   // Show success
   $('#checkoutGrid').style.display = 'none';
   document.querySelector('.checkout__steps').innerHTML = `
-    <span class="step done">1. Cart</span>
-    <span class="step done">2. Checkout</span>
-    <span class="step active">3. Confirmation</span>`;
+    <span class="step done">১. কার্ট</span>
+    <span class="step done">২. চেকআউট</span>
+    <span class="step active">৩. কনফার্মেশন</span>`;
   $('#orderId').textContent = '#' + orderId;
   $('#orderSuccess').style.display = 'block';
   $('#cartCount').textContent = '0';
