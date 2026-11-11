@@ -2188,7 +2188,7 @@ main { animation: fadeIn 0.4s ease both; }
 .checkout__steps .step.done { color: var(--color-accent-green); }
 
 .checkout__grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 40px; align-items: start; }
-.checkout__heading { font-family: var(--font-heading); font-size: 1.3rem; margin-bottom: 18px; }
+.checkout__heading { font-family: 'Poppins', var(--font-body); font-weight: 600; font-size: 1.3rem; margin-bottom: 18px; }
 
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .form-field { margin-bottom: 16px; }
