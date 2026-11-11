@@ -57,7 +57,7 @@ function renderSummaryItems() {
         </div>
         <div class="summary__item-info">
           <div class="summary__item-name">${p.name}</div>
-          <div class="summary__item-meta">সাইজ: ${item.size || '-'}${item.color ? ' · কালার: ' + item.color : ''}</div>
+          <div class="summary__item-meta">Size: ${item.size || '-'}${item.color ? ' · Color: ' + item.color : ''}</div>
         </div>
         <div class="summary__item-price">${fmtBDT(p.price * item.qty)}</div>
       </div>`;
