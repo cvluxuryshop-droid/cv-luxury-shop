@@ -213,11 +213,11 @@ app.post('/api/orders', async (req, res) => {
       event_id: String(o.id),
       event_source_url: String(t.url || '').slice(0, 500),
       user_data: {
-        em: sha(cu.email) ? [sha(cu.email)] : undefined,
         ph: sha(bdPhone(cu.phone)) ? [sha(bdPhone(cu.phone))] : undefined,
         fn: sha(fn) ? [sha(fn)] : undefined,
         ln: sha(rest.join(' ')) ? [sha(rest.join(' '))] : undefined,
-        ct: sha(String(cu.city || '').replace(/\s+/g, '')) ? [sha(String(cu.city).replace(/\s+/g, ''))] : undefined,
+        ct: cu.area === 'inside' ? [sha('dhaka')] : undefined, // checkout only asks inside/outside Dhaka
+        external_id: sha(bdPhone(cu.phone)) ? [sha(bdPhone(cu.phone))] : undefined,
         country: [sha('bd')],
         fbp: t.fbp || undefined,
         fbc: t.fbc || undefined
