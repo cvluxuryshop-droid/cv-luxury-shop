@@ -142,6 +142,8 @@ async function placeOrder() {
       return { id: i.id, name: p ? p.name : 'Item', qty: i.qty, size: i.size, color: i.color || null, price: p ? p.price : 0, image: p ? p.image : '' };
     }),
     subtotal, shipping: ship, discount, total,
+    coupon: couponApplied ? 'CVLUXURY' : '', // server recomputes prices/totals; these are only for display
+    website: ($('#fWebsite') || {}).value || '', // honeypot: real users leave it empty
     status: 'pending',
     tracking: fbIdentifiers() // used server-side for Meta Conversions API; not stored
   };
@@ -154,7 +156,7 @@ async function placeOrder() {
     await dbInsertOrder(order);
   } catch (err) {
     console.error(err);
-    showToast('অর্ডার সম্পন্ন করা যায়নি। আবার চেষ্টা করুন।');
+    showToast(err.message && !/^(POST|GET|PUT|PATCH|DELETE) /.test(err.message) ? err.message : 'অর্ডার সম্পন্ন করা যায়নি। আবার চেষ্টা করুন।');
     btn.disabled = false;
     btn.textContent = 'Place Order';
     return;

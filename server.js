@@ -193,21 +193,82 @@ app.post('/api/track', (req, res) => {
 });
 
 // ── Orders ──
+// Anti-fake-order settings (keep in sync with checkout.js)
+const FREE_SHIP_THRESHOLD = 5000, SHIP_INSIDE = 60, SHIP_OUTSIDE = 120, COUPON_CODE = 'CVLUXURY', COUPON_RATE = 0.10;
+const ORDER_LIMIT_PER_IP = 5, ORDER_LIMIT_WINDOW_MS = 60 * 60 * 1000;   // 5 orders / hour / IP
+const DUPLICATE_PHONE_MINUTES = 30;                                      // same phone: wait before next order
+const BLOCKED_PHONES = new Set((process.env.BLOCKED_PHONES || '').split(',').map(s => bdPhone(s.trim())).filter(Boolean));
+
+const orderHits = new Map(); // ip -> [timestamps]
+function overIpLimit(ip) {
+  const now = Date.now();
+  const hits = (orderHits.get(ip) || []).filter(t => now - t < ORDER_LIMIT_WINDOW_MS);
+  hits.push(now);
+  orderHits.set(ip, hits);
+  return hits.length > ORDER_LIMIT_PER_IP;
+}
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, hits] of orderHits) if (!hits.some(t => now - t < ORDER_LIMIT_WINDOW_MS)) orderHits.delete(ip);
+}, 10 * 60 * 1000).unref();
+
 app.post('/api/orders', async (req, res) => {
   const o = req.body || {};
+  const fail = (code, msg) => res.status(code).json({ error: msg });
   try {
+    // 1. Bots fill the hidden honeypot field: pretend success, save nothing
+    if (o.website) return res.json({ ok: true });
+
+    // 2. Per-IP rate limit
+    if (overIpLimit(req.ip)) return fail(429, 'অনেকবার অর্ডার করার চেষ্টা হয়েছে। কিছুক্ষণ পরে আবার চেষ্টা করুন।');
+
+    // 3. Validate customer details
+    const c = o.customer || {};
+    const name = String(c.name || '').trim().slice(0, 100);
+    const address = String(c.address || '').trim().slice(0, 500);
+    const area = c.area === 'outside' ? 'outside' : 'inside';
+    const phone = String(c.phone || '').replace(/[\s-]/g, '');
+    if (!name || !address) return fail(400, 'নাম ও ঠিকানা দিন।');
+    if (!/^01[3-9]\d{8}$/.test(phone)) return fail(400, 'সঠিক ১১ ডিজিটের মোবাইল নাম্বার দিন।');
+    if (!/^CV\d{8}$/.test(String(o.id || ''))) return fail(400, 'Invalid order');
+    if (BLOCKED_PHONES.has(bdPhone(phone))) return fail(403, 'এই নাম্বার থেকে অর্ডার নেওয়া যাচ্ছে না। আমাদের সাথে যোগাযোগ করুন।');
+
+    // 4. Same phone ordering again too soon
+    const dup = await pool.query(
+      "SELECT 1 FROM orders WHERE customer->>'phone' = $1 AND created_at > now() - ($2 || ' minutes')::interval LIMIT 1",
+      [phone, String(DUPLICATE_PHONE_MINUTES)]);
+    if (dup.rows.length) return fail(429, 'এই নাম্বার থেকে একটু আগেই অর্ডার করা হয়েছে। আমরা শীঘ্রই যোগাযোগ করব।');
+
+    // 5. Prices come from the database, never from the browser
+    const req_items = Array.isArray(o.items) ? o.items.slice(0, 50) : [];
+    const ids = [...new Set(req_items.map(i => String(i && i.id)))];
+    if (!req_items.length || ids.some(id => !/^\d{1,18}$/.test(id))) return fail(400, 'Invalid cart');
+    const { rows: prods } = await pool.query('SELECT id,name,price,image FROM products WHERE id = ANY($1::bigint[])', [ids]);
+    const byId = new Map(prods.map(p => [String(p.id), p]));
+    const items = [];
+    for (const i of req_items) {
+      const p = byId.get(String(i.id));
+      const qty = Math.floor(Number(i.qty));
+      if (!p || !(qty >= 1 && qty <= 20)) return fail(400, 'কার্টের কোনো পণ্য পাওয়া যায়নি। কার্ট রিফ্রেশ করুন।');
+      items.push({ id: i.id, name: p.name, qty, size: i.size ? String(i.size).slice(0, 30) : null,
+                   color: i.color ? String(i.color).slice(0, 30) : null, price: Number(p.price), image: p.image });
+    }
+    const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0);
+    const shipping = subtotal >= FREE_SHIP_THRESHOLD ? 0 : (area === 'outside' ? SHIP_OUTSIDE : SHIP_INSIDE);
+    const discount = String(o.coupon || '').toUpperCase() === COUPON_CODE ? Math.round(subtotal * COUPON_RATE) : 0;
+    const total = subtotal + shipping - discount;
+
     await pool.query(`
       INSERT INTO orders (id,customer,payment,items,subtotal,shipping,discount,total,status)
       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
-    `, [o.id, JSON.stringify(o.customer || {}), o.payment, JSON.stringify(o.items || []),
-        o.subtotal, o.shipping, o.discount, o.total, o.status || 'pending']);
+    `, [o.id, JSON.stringify({ name, phone, address, area }), 'cod', JSON.stringify(items),
+        subtotal, shipping, discount, total, 'pending']);
     res.json({ ok: true });
 
     // Server-side Purchase (same event_id as the browser Purchase → Meta deduplicates)
-    const cu = o.customer || {};
+    const cu = { name, phone, address, area };
     const t = o.tracking || {};
-    const [fn, ...rest] = String(cu.name || '').trim().split(/\s+/);
-    const items = Array.isArray(o.items) ? o.items : [];
+    const [fn, ...rest] = name.split(/\s+/);
     sendCapi(req, [{
       event_name: 'Purchase',
       event_id: String(o.id),
@@ -227,7 +288,7 @@ app.post('/api/orders', async (req, res) => {
         content_type: 'product',
         contents: items.map(i => ({ id: String(i.id), quantity: Number(i.qty) || 1, item_price: Number(i.price) || 0 })),
         num_items: items.reduce((s, i) => s + (Number(i.qty) || 0), 0),
-        value: Number(o.total) || 0,
+        value: total,
         currency: 'BDT'
       }
     }]).catch(e => console.error('Purchase CAPI failed:', e.message));
