@@ -93,12 +93,14 @@ function mapProductRow(r) {
 
 // ── Products ──
 async function dbGetProducts() {
-  const rows = await apiGet('/api/products');
+  // pub=1: photos come back as small cacheable image URLs instead of base64 blobs
+  const rows = await apiGet('/api/products?pub=1');
   return (rows || []).map(mapProductRow);
 }
 
-async function dbGetProduct(id) {
-  const row = await apiGet('/api/products/' + encodeURIComponent(id));
+// pub=true for the storefront; the admin editor needs the raw stored images
+async function dbGetProduct(id, pub) {
+  const row = await apiGet('/api/products/' + encodeURIComponent(id) + (pub ? '?pub=1' : ''));
   return mapProductRow(row);
 }
 

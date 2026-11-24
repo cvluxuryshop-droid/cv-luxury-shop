@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const id = Number(new URLSearchParams(location.search).get('id'));
   // Fetch the full single product (with colors + images); fall back to the light list
   try {
-    current = await dbGetProduct(id);
+    current = await dbGetProduct(id, true);
   } catch (e) {
     await loadCatalogue();
     current = getProduct(id);

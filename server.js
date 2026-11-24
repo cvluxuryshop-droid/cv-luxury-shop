@@ -9,6 +9,7 @@ const path = require('path');
 const { Pool } = require('pg');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+const zlib = require('zlib');
 
 const app = express();
 app.set('trust proxy', true); // real client IP behind Railway's proxy (for Meta CAPI)
@@ -98,18 +99,59 @@ app.get('/api/me', requireAdmin, (req, res) => res.json({ ok: true }));
 // ── Products ──
 const LIST_COLS = 'id,name,code,price,original_price,image,category,badge,sizes';
 
+// Photos are stored as base64 data URLs in the DB. For the storefront (?pub=1) we replace them with
+// small, long-cached image URLs so the JSON stays tiny and each photo is downloaded only once.
+const isDataUrl = (s) => typeof s === 'string' && s.startsWith('data:');
+const imgVer = (s) => crypto.createHash('md5').update(s).digest('hex').slice(0, 10);
+
+function publicImages(row) {
+  const out = { ...row };
+  if (isDataUrl(out.image)) out.image = `/api/products/${out.id}/img/main?v=${imgVer(out.image)}`;
+  if (Array.isArray(out.colors)) {
+    out.colors = out.colors.map((c, i) =>
+      c && isDataUrl(c.image) ? { ...c, image: `/api/products/${out.id}/img/c${i}?v=${imgVer(c.image)}` } : c);
+  }
+  return out;
+}
+
+// gzip JSON replies (Express has no compression by default)
+function sendJsonGzip(req, res, data) {
+  const body = Buffer.from(JSON.stringify(data));
+  res.type('application/json');
+  if (body.length > 1024 && /\bgzip\b/.test(req.headers['accept-encoding'] || '')) {
+    res.set('Content-Encoding', 'gzip').set('Vary', 'Accept-Encoding');
+    return res.send(zlib.gzipSync(body));
+  }
+  res.send(body);
+}
+
 app.get('/api/products', async (req, res) => {
   try {
     const { rows } = await pool.query(`SELECT ${LIST_COLS} FROM products ORDER BY id`);
-    res.json(rows);
+    if (req.query.pub) return sendJsonGzip(req, res, rows.map(publicImages));
+    sendJsonGzip(req, res, rows);
   } catch (e) { console.error(e); res.status(500).json({ error: 'Failed to load products' }); }
+});
+
+app.get('/api/products/:id/img/:slot', async (req, res) => {
+  try {
+    const { rows } = await pool.query('SELECT image, colors FROM products WHERE id = $1', [req.params.id]);
+    if (!rows.length) return res.sendStatus(404);
+    const m = req.params.slot.match(/^(main|c(\d+))$/);
+    if (!m) return res.sendStatus(404);
+    const src = m[1] === 'main' ? rows[0].image : (rows[0].colors || [])[Number(m[2])]?.image;
+    const d = isDataUrl(src) && src.match(/^data:([^;,]+);base64,(.*)$/s);
+    if (!d) return res.sendStatus(404);
+    res.set('Content-Type', d[1]).set('Cache-Control', 'public, max-age=31536000, immutable');
+    res.send(Buffer.from(d[2], 'base64'));
+  } catch (e) { console.error(e); res.sendStatus(500); }
 });
 
 app.get('/api/products/:id', async (req, res) => {
   try {
     const { rows } = await pool.query('SELECT * FROM products WHERE id = $1', [req.params.id]);
     if (!rows.length) return res.status(404).json({ error: 'Not found' });
-    res.json(rows[0]);
+    sendJsonGzip(req, res, req.query.pub ? publicImages(rows[0]) : rows[0]);
   } catch (e) { console.error(e); res.status(500).json({ error: 'Failed to load product' }); }
 });
 
