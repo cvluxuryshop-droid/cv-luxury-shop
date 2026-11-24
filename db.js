@@ -266,3 +266,33 @@ async function loadCatalogue() {
   }
   return PRODUCTS;
 }
+
+// ── Instant product pages ──
+// The shop page warms a per-product cache (hover / touch / tap), and product.html paints from it at once.
+const PRODUCT_CACHE = 'cv_prod_';
+
+function cacheProduct(p) {
+  try { sessionStorage.setItem(PRODUCT_CACHE + p.id, JSON.stringify(p)); } catch (e) {}
+}
+function readCachedProduct(id) {
+  try { return JSON.parse(sessionStorage.getItem(PRODUCT_CACHE + id)); } catch (e) { return null; }
+}
+function readCachedCatalogue() {
+  try { const l = JSON.parse(sessionStorage.getItem(CATALOGUE_CACHE)); return Array.isArray(l) ? l : []; } catch (e) { return []; }
+}
+
+const _prefetching = new Set();
+function prefetchProduct(id) {
+  if (!id || _prefetching.has(id)) return;
+  _prefetching.add(id);
+  dbGetProduct(id, true).then(cacheProduct).catch(() => _prefetching.delete(id));
+}
+if (typeof document !== 'undefined' && !/admin/i.test(location.pathname)) {
+  const warm = (e) => {
+    const a = e.target.closest && e.target.closest('a[href*="product.html?id="]');
+    if (a) prefetchProduct(Number(new URL(a.href, location.href).searchParams.get('id')));
+  };
+  document.addEventListener('pointerover', warm, { passive: true });
+  document.addEventListener('touchstart', warm, { passive: true });
+  document.addEventListener('pointerdown', warm, { passive: true });
+}

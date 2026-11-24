@@ -12,41 +12,64 @@ let qty = 1;
 
 document.addEventListener('DOMContentLoaded', async () => {
   const id = Number(new URLSearchParams(location.search).get('id'));
-  // Fetch the full single product (with colors + images); fall back to the light list
+  initCartDrawer();
+
+  // Instant paint: use what the shop page already loaded (prefetched product or catalogue list),
+  // then refresh from the server in the background.
+  const cachedList = readCachedCatalogue();
+  if (cachedList.length && !PRODUCTS.length) cachedList.forEach(p => PRODUCTS.push(p));
+  const instant = readCachedProduct(id) || cachedList.find(p => p.id === id) || null;
+  if (instant) {
+    current = instant;
+    showProduct();
+    if (PRODUCTS.length) renderRelated();
+  }
+
+  // Fetch the full single product (colors, images, description); fall back to the light list
+  let fresh = null;
   try {
-    current = await dbGetProduct(id, true);
+    fresh = await dbGetProduct(id, true);
+    cacheProduct(fresh);
   } catch (e) {
-    await loadCatalogue();
-    current = getProduct(id);
+    if (!instant) { await loadCatalogue(); fresh = getProduct(id); }
   }
 
-  if (!current) {
-    $('#pdpMain').innerHTML = `
-      <div class="pdp__notfound">
-        <h2>Product not found</h2>
-        <p>The product you are looking for does not exist.</p>
-        <a href="index.html" class="btn-primary">Back to Shop</a>
-      </div>`;
-    $('#pdpTabs').style.display = 'none';
-    updateCartUI();
-    initCartDrawer();
-    return;
+  if (!instant) {
+    current = fresh;
+    if (!current) { showNotFound(); return; }
+    showProduct();
+  } else if (fresh && JSON.stringify(fresh) !== JSON.stringify(current)) {
+    // server data differs from what we painted: refresh the product block only
+    current = fresh;
+    stopAutoplay();
+    renderMain();
   }
 
+  // Related products need the light catalogue list
+  if (!PRODUCTS.length) await loadCatalogue();
+  renderRelated();
+});
+
+function showNotFound() {
+  $('#pdpMain').innerHTML = `
+    <div class="pdp__notfound">
+      <h2>Product not found</h2>
+      <p>The product you are looking for does not exist.</p>
+      <a href="index.html" class="btn-primary">Back to Shop</a>
+    </div>`;
+  $('#pdpTabs').style.display = 'none';
+  updateCartUI();
+}
+
+function showProduct() {
   trackPixel('ViewContent', { content_ids: [String(current.id)], content_name: current.name, content_type: 'product', value: current.price, currency: 'BDT' });
   selectedSize = firstAvailableSize(current);
   document.title = `${current.name} - CV Luxury Shop`;
   $('#breadcrumbName').textContent = current.name;
-
   renderMain();
   renderTabs();
   updateCartUI();
-  initCartDrawer();
-
-  // Related products need the light catalogue list (load in background)
-  if (!PRODUCTS.length) await loadCatalogue();
-  renderRelated();
-});
+}
 
 // ── Main product block ──
 function renderMain() {
