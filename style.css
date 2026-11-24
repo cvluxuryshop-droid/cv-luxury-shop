@@ -2585,6 +2585,12 @@ main { animation: fadeIn 0.4s ease both; }
     display: none;
   }
 
+  /* narrow phones: let price / old price / discount wrap instead of overflowing the card */
+  .product-card__price {
+    flex-wrap: wrap;
+    gap: 2px 6px;
+  }
+
   .whatsapp-float {
     bottom: 20px;
     left: 20px;

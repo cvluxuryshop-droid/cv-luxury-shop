@@ -424,7 +424,7 @@ function initProductsUI() {
 }
 
 // Resize + compress an image file to a small JPEG data URL (much faster loading)
-function compressImage(file, maxDim = 1000, quality = 0.82) {
+function compressImage(file, maxDim = 900, quality = 0.78) {
   return new Promise((resolve, reject) => {
     if (!file.type || !file.type.startsWith('image/')) { reject(new Error('Not an image')); return; }
     const reader = new FileReader();
@@ -442,7 +442,10 @@ function compressImage(file, maxDim = 1000, quality = 0.82) {
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, w, h);
         ctx.drawImage(img, 0, 0, w, h);
-        resolve(canvas.toDataURL('image/jpeg', quality));
+        // WebP is ~30% smaller than JPEG at the same quality; fall back to JPEG if unsupported
+        let out = canvas.toDataURL('image/webp', quality);
+        if (!out.startsWith('data:image/webp')) out = canvas.toDataURL('image/jpeg', quality);
+        resolve(out);
       };
       img.onerror = () => reject(new Error('Image load failed'));
       img.src = reader.result;
