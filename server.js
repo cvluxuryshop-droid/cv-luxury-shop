@@ -384,6 +384,35 @@ app.put('/api/settings', requireAdmin, async (req, res) => {
   } catch (e) { console.error(e); res.status(500).json({ error: 'Failed to save settings' }); }
 });
 
+// ── Durable tracking cookies ──
+// Safari/iOS deletes cookies written by JavaScript after 7 days, so returning visitors look new to
+// Meta/GA. Re-issuing _fbp / _fbc / _ga from the server (HTTP cookies) keeps them for ~13 months.
+const TRACK_COOKIE_MAX_AGE = 395 * 24 * 60 * 60; // seconds
+function parseCookies(h) {
+  const out = {};
+  String(h || '').split(';').forEach(p => {
+    const i = p.indexOf('=');
+    if (i > 0) out[p.slice(0, i).trim()] = decodeURIComponent(p.slice(i + 1).trim());
+  });
+  return out;
+}
+app.use((req, res, next) => {
+  const isPage = req.method === 'GET' && (req.path === '/' || /\.html$/.test(req.path) || !/\.[a-z0-9]+$/i.test(req.path)) && !req.path.startsWith('/api/');
+  if (!isPage || /admin/i.test(req.path)) return next();
+  const c = parseCookies(req.headers.cookie);
+  const opts = `; Max-Age=${TRACK_COOKIE_MAX_AGE}; Path=/; SameSite=Lax${req.secure ? '; Secure' : ''}`;
+  const set = [];
+  const fbp = /^fb\.\d\.\d+\.\d+$/.test(c._fbp || '') ? c._fbp
+    : `fb.1.${Date.now()}.${crypto.randomInt(1e9, 1e10 - 1)}${crypto.randomInt(0, 10)}`; // same format Meta's pixel uses
+  set.push(`_fbp=${fbp}${opts}`);
+  const fbclid = typeof req.query.fbclid === 'string' ? req.query.fbclid.slice(0, 500) : '';
+  if (fbclid && /^[\w-]+$/.test(fbclid)) set.push(`_fbc=fb.1.${Date.now()}.${fbclid}${opts}`);
+  else if (/^fb\.\d\.\d+\./.test(c._fbc || '')) set.push(`_fbc=${c._fbc}${opts}`);
+  if (/^GA\d\.\d\.\d+\.\d+$/.test(c._ga || '')) set.push(`_ga=${c._ga}${opts}`);
+  res.append('Set-Cookie', set);
+  next();
+});
+
 // ── Static site ──
 // `extensions: ['html']` lets /admin, /checkout, /product resolve to the .html files
 app.use(express.static(__dirname, { extensions: ['html'] }));
