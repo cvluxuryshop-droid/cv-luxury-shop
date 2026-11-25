@@ -72,6 +72,8 @@ async function showAdmin() {
   initOrdersUI();
   initProductsUI();
   $('#settingsForm').addEventListener('submit', onSaveSettings);
+  $('#trackingForm').addEventListener('submit', onSaveTracking);
+  $('#trTestBtn').addEventListener('click', onTestTracking);
   $('#exportBtn').addEventListener('click', exportCSV);
   $('#menuToggle').addEventListener('click', () => $('#sidebar').classList.toggle('open'));
   // phones: tap outside the open sidebar to close it
@@ -100,7 +102,7 @@ function switchView(view) {
   $('#viewTitle').textContent = view.charAt(0).toUpperCase() + view.slice(1);
   $('#sidebar').classList.remove('open');
   if (view === 'products') renderProducts();
-  if (view === 'settings') loadSettingsForm();
+  if (view === 'settings') { loadSettingsForm(); loadTrackingForm(); }
 }
 
 // ── Settings (contact info) ──
@@ -129,6 +131,59 @@ async function onSaveSettings(e) {
     toast('Failed to save settings');
   }
   btn.disabled = false;
+}
+
+// ── Conversion tracking (server-side Meta CAPI + GA4) ──
+const TRACK_FIELDS = { capiToken: '#trCapiToken', testEventCode: '#trTestCode', ga4Id: '#trGa4Id', ga4Secret: '#trGa4Secret' };
+const escHtml = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+function trackRow(label, state) {
+  // state: { ok, error, at?, event? } | null
+  let txt, cls;
+  if (!state) { txt = 'No events yet since the server started'; cls = ''; }
+  else if (state.ok) { txt = '✓ OK' + (state.event ? ' — ' + state.event : '') + (state.at ? ' · ' + fmtDate(state.at) : ''); cls = 'text-green'; }
+  else { txt = '✗ ' + (state.error || 'Failed') + (state.at ? ' · ' + fmtDate(state.at) : ''); cls = ''; }
+  return `<div class="d-row"><span>${label}</span><b class="${cls}" style="${!state || state.ok ? '' : 'color:var(--red)'}">${escHtml(txt)}</b></div>`;
+}
+
+async function loadTrackingForm() {
+  try {
+    const t = await apiGet('/api/tracking', true);
+    Object.entries(TRACK_FIELDS).forEach(([k, sel]) => {
+      $(sel).value = t[k] || '';
+      $(sel).disabled = !!(t.fromEnv && t.fromEnv[k]);
+      if ($(sel).disabled) $(sel).title = 'Set in Railway variables';
+    });
+    $('#trStatus').innerHTML =
+      `<div class="d-row"><span>Meta Pixel ID</span><b>${escHtml(t.pixelId || 'Not set (Contact Information above)')}</b></div>` +
+      trackRow('Last Meta event', t.last && t.last.meta) +
+      trackRow('Last GA4 event', t.last && t.last.ga4);
+  } catch (e) { console.error('Load tracking failed:', e); $('#trStatus').textContent = 'Could not load tracking settings'; }
+}
+
+async function onSaveTracking(e) {
+  e.preventDefault();
+  const data = {};
+  Object.entries(TRACK_FIELDS).forEach(([k, sel]) => { if (!$(sel).disabled) data[k] = $(sel).value.trim(); });
+  const btn = $('#trackingForm').querySelector('button[type="submit"]');
+  btn.disabled = true;
+  try { await apiSend('PUT', '/api/tracking', data, true); toast('Tracking settings saved'); await loadTrackingForm(); }
+  catch (err) { toast(err.message || 'Failed to save'); }
+  btn.disabled = false;
+}
+
+async function onTestTracking() {
+  const btn = $('#trTestBtn');
+  btn.disabled = true; btn.textContent = 'Sending...';
+  try {
+    const r = await apiSend('POST', '/api/tracking/test', null, true);
+    $('#trStatus').innerHTML =
+      trackRow('Meta test', r.meta) +
+      `<div class="d-row"><span></span><b style="font-weight:400;color:var(--muted)">${r.testEventCode ? 'Look in Events Manager → Test Events' : 'Sent as a real PageView (add a Test Event Code to see it under Test Events)'}</b></div>` +
+      trackRow('GA4 test', r.ga4) +
+      `<div class="d-row"><span></span><b style="font-weight:400;color:var(--muted)">GA4 checks the event format only — a wrong API secret still says OK. Confirm in GA4 → Reports → Realtime.</b></div>`;
+  } catch (err) { toast(err.message || 'Test failed'); }
+  btn.disabled = false; btn.textContent = 'Send test event';
 }
 
 // ── Render everything ──
