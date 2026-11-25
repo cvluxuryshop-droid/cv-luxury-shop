@@ -200,7 +200,8 @@
             <div class="pf-grid">
               <div class="pf-field pf-full">
                 <label>Meta Conversions API Access Token</label>
-                <input type="password" id="trCapiToken" autocomplete="off" placeholder="Events Manager → Settings → Conversions API → Generate access token">
+                <input type="text" id="trCapiToken" autocomplete="off" spellcheck="false" data-lpignore="true" placeholder="Events Manager → Settings → Conversions API → Generate access token">
+                <small class="pf-hint" id="trCapiNote"></small>
               </div>
               <div class="pf-field">
                 <label>Meta Test Event Code <small style="color:var(--dim)">(optional)</small></label>
@@ -212,7 +213,8 @@
               </div>
               <div class="pf-field pf-full">
                 <label>GA4 Measurement Protocol API Secret</label>
-                <input type="password" id="trGa4Secret" autocomplete="off" placeholder="GA4 Admin → Data streams → (your stream) → Measurement Protocol API secrets → Create">
+                <input type="text" id="trGa4Secret" autocomplete="off" spellcheck="false" data-lpignore="true" placeholder="GA4 Admin → Data streams → (your stream) → Measurement Protocol API secrets → Create">
+                <small class="pf-hint" id="trGa4SecretNote"></small>
               </div>
             </div>
             <small class="pf-hint">Clear the Test Event Code once testing is done, otherwise real events only show under Test Events.</small>
@@ -334,6 +336,6 @@
 
 <script src="data.js?v=10"></script>
 <script src="db.js?v=16"></script>
-<script src="admin.js?v=17"></script>
+<script src="admin.js?v=18"></script>
 </body>
 </html>
