@@ -181,16 +181,33 @@ app.delete('/api/products/:id', requireAdmin, async (req, res) => {
 const sha = (v) => v ? crypto.createHash('sha256').update(String(v).trim().toLowerCase()).digest('hex') : undefined;
 const bdPhone = (p) => { const d = String(p || '').replace(/\D/g, ''); return d.startsWith('0') ? '88' + d : d; };
 
-async function getPixelId() {
-  const { rows } = await pool.query("SELECT value FROM settings WHERE key = 'pixelId'");
-  return (rows[0] && rows[0].value) || '';
+// Tracking config: set in admin → Settings → Conversion Tracking (Railway variables still work and win).
+// These keys are private: never returned by the public /api/settings.
+const PRIVATE_TRACKING_KEYS = ['capiToken', 'testEventCode', 'ga4Id', 'ga4Secret'];
+let _trackCfg = null, _trackCfgAt = 0;
+async function trackingConfig(force) {
+  if (!force && _trackCfg && Date.now() - _trackCfgAt < 60000) return _trackCfg;
+  const { rows } = await pool.query("SELECT key, value FROM settings WHERE key = ANY($1)", [['pixelId', ...PRIVATE_TRACKING_KEYS]]);
+  const s = Object.fromEntries(rows.map(r => [r.key, r.value || '']));
+  _trackCfg = {
+    pixelId: s.pixelId || '',
+    capiToken: META_CAPI_TOKEN || s.capiToken || '',
+    testEventCode: META_TEST_EVENT_CODE || s.testEventCode || '',
+    ga4Id: process.env.GA4_MEASUREMENT_ID || s.ga4Id || '',
+    ga4Secret: process.env.GA4_API_SECRET || s.ga4Secret || ''
+  };
+  _trackCfgAt = Date.now();
+  return _trackCfg;
 }
 
+// last result per destination, shown in admin so problems are visible without reading server logs
+const trackLog = { meta: null, ga4: null };
+const logResult = (dest, event, ok, error) => { trackLog[dest] = { event, ok, error: error || '', at: new Date().toISOString() }; };
+
 // events: [{ event_name, event_id, event_source_url, user_data, custom_data }]
-async function sendCapi(req, events) {
-  if (!META_CAPI_TOKEN) return;
-  const pixelId = await getPixelId();
-  if (!pixelId) return;
+async function sendCapi(req, events, opts = {}) {
+  const cfg = await trackingConfig();
+  if (!cfg.capiToken || !cfg.pixelId) return { ok: false, error: !cfg.pixelId ? 'Pixel ID not set' : 'CAPI token not set' };
   const ip = req.ip;
   const ua = req.headers['user-agent'];
   const payload = {
@@ -204,11 +221,60 @@ async function sendCapi(req, events) {
       custom_data: e.custom_data
     }))
   };
-  if (META_TEST_EVENT_CODE) payload.test_event_code = META_TEST_EVENT_CODE;
-  const r = await fetch(`https://graph.facebook.com/v21.0/${pixelId}/events?access_token=${encodeURIComponent(META_CAPI_TOKEN)}`, {
+  const testCode = opts.testEventCode || cfg.testEventCode;
+  if (testCode) payload.test_event_code = testCode;
+  const r = await fetch(`https://graph.facebook.com/v21.0/${cfg.pixelId}/events?access_token=${encodeURIComponent(cfg.capiToken)}`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
   });
-  if (!r.ok) console.error('Meta CAPI error', r.status, await r.text());
+  const body = await r.text();
+  let error = '';
+  if (!r.ok) { try { error = JSON.parse(body).error.message; } catch (e) { error = body.slice(0, 300); } console.error('Meta CAPI error', r.status, body); }
+  logResult('meta', events[0].event_name, r.ok, error);
+  return { ok: r.ok, error };
+}
+
+// ── GA4 Measurement Protocol (server-side GA4 events, not blocked by ad blockers) ──
+// client_id comes from the visitor's _ga cookie (GA1.1.<id>.<ts> → "<id>.<ts>") so events join their session.
+function ga4Ids(req) {
+  const c = parseCookies(req.headers.cookie);
+  const ga = c._ga || c._cvk_ga || '';
+  const m = ga.match(/^GA\d\.\d\.(\d+\.\d+)$/);
+  const client_id = m ? m[1] : `${crypto.randomInt(1e8, 2147483647)}.${Math.floor(Date.now() / 1000)}`;
+  let session_id;
+  for (const [k, v] of Object.entries(c)) {
+    if (!/^_ga_[A-Z0-9]+$/.test(k)) continue;
+    const s = v.match(/^GS2\.\d\.s(\d+)/) || v.match(/^GS1\.\d\.(\d+)\./); // new and old cookie formats
+    if (s) { session_id = s[1]; break; }
+  }
+  return { client_id, session_id };
+}
+
+const GA4_NAMES = { PageView: 'page_view', ViewContent: 'view_item', AddToCart: 'add_to_cart', InitiateCheckout: 'begin_checkout', Purchase: 'purchase' };
+
+async function sendGa4(req, name, data, opts = {}) {
+  const cfg = await trackingConfig();
+  if (!cfg.ga4Id || !cfg.ga4Secret) return { ok: false, error: 'GA4 Measurement ID / API secret not set' };
+  const ev = GA4_NAMES[name];
+  if (!ev || ev === 'page_view') return { ok: true }; // page views already come from GA4 in the browser
+  const { client_id, session_id } = ga4Ids(req);
+  const items = (data.items || []).map(i => ({ item_id: String(i.id), item_name: i.name || undefined, price: Number(i.price) || 0, quantity: Number(i.qty) || 1 }));
+  const params = { currency: 'BDT', value: Number(data.value) || 0, items, engagement_time_msec: 1 };
+  if (session_id) params.session_id = session_id;
+  if (ev === 'purchase') { params.transaction_id = String(data.transaction_id); params.shipping = Number(data.shipping) || 0; }
+  if (data.page_location) params.page_location = data.page_location;
+  const host = opts.debug ? 'https://www.google-analytics.com/debug/mp/collect' : 'https://www.google-analytics.com/mp/collect';
+  const r = await fetch(`${host}?measurement_id=${encodeURIComponent(cfg.ga4Id)}&api_secret=${encodeURIComponent(cfg.ga4Secret)}`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ client_id, user_id: data.user_id || undefined, events: [{ name: ev, params }] })
+  });
+  let error = r.ok ? '' : `HTTP ${r.status}`;
+  if (opts.debug && r.ok) {
+    const j = await r.json().catch(() => ({}));
+    const msgs = (j.validationMessages || []).map(m => m.description);
+    if (msgs.length) error = msgs.join('; ');
+  }
+  if (!opts.debug) logResult('ga4', ev, r.ok, error);
+  return { ok: r.ok && !error, error };
 }
 
 // Browser events relayed here so they are also sent server-side (deduplicated by event_id)
@@ -232,6 +298,15 @@ app.post('/api/track', (req, res) => {
       currency: 'BDT'
     }
   }]).catch(e => console.error('Track failed:', e.message));
+  // same event to GA4 server-side
+  const ids = Array.isArray(c.content_ids) ? c.content_ids.slice(0, 50).map(String) : [];
+  const value = Number.isFinite(Number(c.value)) ? Number(c.value) : 0;
+  sendGa4(req, b.event_name, {
+    value,
+    items: ids.map(id => ({ id, name: ids.length === 1 && c.content_name ? String(c.content_name).slice(0, 100) : undefined,
+                             price: ids.length === 1 ? value : 0, qty: 1 })),
+    page_location: String(b.event_source_url || '').slice(0, 500) || undefined
+  }).catch(e => console.error('GA4 track failed:', e.message));
 });
 
 // ── Orders ──
@@ -334,6 +409,9 @@ app.post('/api/orders', async (req, res) => {
         currency: 'BDT'
       }
     }]).catch(e => console.error('Purchase CAPI failed:', e.message));
+    sendGa4(req, 'Purchase', {
+      transaction_id: o.id, value: total, shipping, items, page_location: String(t.url || '').slice(0, 500) || undefined
+    }).catch(e => console.error('Purchase GA4 failed:', e.message));
   } catch (e) { console.error(e); res.status(500).json({ error: 'Failed to place order' }); }
 });
 
@@ -380,8 +458,55 @@ app.put('/api/settings', requireAdmin, async (req, res) => {
         ON CONFLICT (key) DO UPDATE SET value = $2
       `, [k, k === 'pixelId' ? body[k].replace(/\D/g, '').slice(0, 20) : body[k].trim().slice(0, 300)]);
     }
+    _trackCfg = null; // pixel id may have changed
     res.json({ ok: true });
   } catch (e) { console.error(e); res.status(500).json({ error: 'Failed to save settings' }); }
+});
+
+// ── Conversion tracking config (admin only; secrets are never sent back in full) ──
+const mask = (s) => s ? '••••' + s.slice(-4) : '';
+app.get('/api/tracking', requireAdmin, async (req, res) => {
+  try {
+    const cfg = await trackingConfig(true);
+    res.json({
+      pixelId: cfg.pixelId, ga4Id: cfg.ga4Id, testEventCode: cfg.testEventCode,
+      capiToken: mask(cfg.capiToken), ga4Secret: mask(cfg.ga4Secret),
+      fromEnv: { capiToken: !!META_CAPI_TOKEN, ga4Id: !!process.env.GA4_MEASUREMENT_ID, ga4Secret: !!process.env.GA4_API_SECRET, testEventCode: !!META_TEST_EVENT_CODE },
+      last: trackLog
+    });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'Failed to load tracking settings' }); }
+});
+
+app.put('/api/tracking', requireAdmin, async (req, res) => {
+  const b = req.body || {};
+  const clean = {
+    capiToken: v => v.replace(/\s/g, '').slice(0, 500),
+    testEventCode: v => v.replace(/[^\w]/g, '').slice(0, 40),
+    ga4Id: v => v.trim().toUpperCase().slice(0, 20),
+    ga4Secret: v => v.trim().slice(0, 100)
+  };
+  try {
+    if (b.ga4Id && !/^G-[A-Z0-9]{4,15}$/.test(clean.ga4Id(b.ga4Id))) return res.status(400).json({ error: 'GA4 Measurement ID looks like G-XXXXXXXXXX' });
+    for (const k of PRIVATE_TRACKING_KEYS) {
+      if (typeof b[k] !== 'string' || b[k].startsWith('••••')) continue; // masked value = unchanged
+      await pool.query(`INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = $2`, [k, clean[k](b[k])]);
+    }
+    _trackCfg = null;
+    res.json({ ok: true });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'Failed to save tracking settings' }); }
+});
+
+// Sends one test event to each destination and reports what came back
+app.post('/api/tracking/test', requireAdmin, async (req, res) => {
+  const cfg = await trackingConfig(true).catch(() => null);
+  if (!cfg) return res.status(500).json({ error: 'Could not read settings' });
+  const id = 'test-' + Date.now();
+  const meta = await sendCapi(req, [{
+    event_name: 'PageView', event_id: id, event_source_url: `${req.protocol}://${req.get('host')}/`, user_data: {}, custom_data: {}
+  }], { testEventCode: cfg.testEventCode }).catch(e => ({ ok: false, error: e.message }));
+  const ga4 = await sendGa4(req, 'ViewContent', { value: 1, items: [{ id: 'test', name: 'Test', price: 1, qty: 1 }] }, { debug: true })
+    .catch(e => ({ ok: false, error: e.message }));
+  res.json({ meta, ga4, testEventCode: cfg.testEventCode });
 });
 
 // ── Durable tracking cookies ──
@@ -392,7 +517,9 @@ function parseCookies(h) {
   const out = {};
   String(h || '').split(';').forEach(p => {
     const i = p.indexOf('=');
-    if (i > 0) out[p.slice(0, i).trim()] = decodeURIComponent(p.slice(i + 1).trim());
+    if (i <= 0) return;
+    const v = p.slice(i + 1).trim();
+    try { out[p.slice(0, i).trim()] = decodeURIComponent(v); } catch (e) { out[p.slice(0, i).trim()] = v; } // malformed cookie must not break the page
   });
   return out;
 }

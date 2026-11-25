@@ -192,6 +192,37 @@
             </div>
           </form>
         </div>
+
+        <div class="panel" style="margin-top:18px;">
+          <div class="panel__head"><h3>Conversion Tracking (server-side)</h3></div>
+          <form id="trackingForm" style="padding:20px;">
+            <p class="pf-hint" style="margin:0 0 14px;">Events go straight from our server to Meta and Google — ad blockers and iPhone privacy can't stop them. Secrets are stored on the server and never shown on the website.</p>
+            <div class="pf-grid">
+              <div class="pf-field pf-full">
+                <label>Meta Conversions API Access Token</label>
+                <input type="password" id="trCapiToken" autocomplete="off" placeholder="Events Manager → Settings → Conversions API → Generate access token">
+              </div>
+              <div class="pf-field">
+                <label>Meta Test Event Code <small style="color:var(--dim)">(optional)</small></label>
+                <input type="text" id="trTestCode" autocomplete="off" placeholder="e.g. TEST12345">
+              </div>
+              <div class="pf-field">
+                <label>GA4 Measurement ID</label>
+                <input type="text" id="trGa4Id" autocomplete="off" placeholder="G-XXXXXXXXXX">
+              </div>
+              <div class="pf-field pf-full">
+                <label>GA4 Measurement Protocol API Secret</label>
+                <input type="password" id="trGa4Secret" autocomplete="off" placeholder="GA4 Admin → Data streams → (your stream) → Measurement Protocol API secrets → Create">
+              </div>
+            </div>
+            <small class="pf-hint">Clear the Test Event Code once testing is done, otherwise real events only show under Test Events.</small>
+            <div style="margin-top:16px; display:flex; gap:10px; flex-wrap:wrap;">
+              <button type="submit" class="btn btn-primary">Save Tracking</button>
+              <button type="button" class="btn btn-ghost" id="trTestBtn">Send test event</button>
+            </div>
+            <div id="trStatus" class="d-box" style="margin-top:16px;"></div>
+          </form>
+        </div>
       </section>
     </main>
   </div>
@@ -303,6 +334,6 @@
 
 <script src="data.js?v=10"></script>
 <script src="db.js?v=16"></script>
-<script src="admin.js?v=16"></script>
+<script src="admin.js?v=17"></script>
 </body>
 </html>
