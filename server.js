@@ -189,12 +189,14 @@ async function trackingConfig(force) {
   if (!force && _trackCfg && Date.now() - _trackCfgAt < 60000) return _trackCfg;
   const { rows } = await pool.query("SELECT key, value FROM settings WHERE key = ANY($1)", [['pixelId', ...PRIVATE_TRACKING_KEYS]]);
   const s = Object.fromEntries(rows.map(r => [r.key, r.value || '']));
+  // A value saved in admin wins; the Railway variable is the fallback
   _trackCfg = {
     pixelId: s.pixelId || '',
-    capiToken: META_CAPI_TOKEN || s.capiToken || '',
-    testEventCode: META_TEST_EVENT_CODE || s.testEventCode || '',
-    ga4Id: process.env.GA4_MEASUREMENT_ID || s.ga4Id || '',
-    ga4Secret: process.env.GA4_API_SECRET || s.ga4Secret || ''
+    capiToken: s.capiToken || META_CAPI_TOKEN || '',
+    testEventCode: s.testEventCode || META_TEST_EVENT_CODE || '',
+    ga4Id: s.ga4Id || process.env.GA4_MEASUREMENT_ID || '',
+    ga4Secret: s.ga4Secret || process.env.GA4_API_SECRET || '',
+    saved: s // raw admin values, for the settings form
   };
   _trackCfgAt = Date.now();
   return _trackCfg;
@@ -468,9 +470,11 @@ const mask = (s) => s ? '••••' + s.slice(-4) : '';
 app.get('/api/tracking', requireAdmin, async (req, res) => {
   try {
     const cfg = await trackingConfig(true);
+    const s = cfg.saved || {};
     res.json({
-      pixelId: cfg.pixelId, ga4Id: cfg.ga4Id, testEventCode: cfg.testEventCode,
-      capiToken: mask(cfg.capiToken), ga4Secret: mask(cfg.ga4Secret),
+      // only what was saved in admin; Railway values are reported via fromEnv
+      pixelId: cfg.pixelId, ga4Id: s.ga4Id || '', testEventCode: s.testEventCode || '',
+      capiToken: mask(s.capiToken), ga4Secret: mask(s.ga4Secret),
       fromEnv: { capiToken: !!META_CAPI_TOKEN, ga4Id: !!process.env.GA4_MEASUREMENT_ID, ga4Secret: !!process.env.GA4_API_SECRET, testEventCode: !!META_TEST_EVENT_CODE },
       last: trackLog
     });

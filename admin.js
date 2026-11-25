@@ -149,11 +149,16 @@ function trackRow(label, state) {
 async function loadTrackingForm() {
   try {
     const t = await apiGet('/api/tracking', true);
-    Object.entries(TRACK_FIELDS).forEach(([k, sel]) => {
-      $(sel).value = t[k] || '';
-      $(sel).disabled = !!(t.fromEnv && t.fromEnv[k]);
-      if ($(sel).disabled) $(sel).title = 'Set in Railway variables';
-    });
+    // Fields are always editable. A saved secret shows as ••••1234; leave it as is to keep it,
+    // replace it to change it, or clear it to remove it.
+    Object.entries(TRACK_FIELDS).forEach(([k, sel]) => { $(sel).value = t[k] || ''; });
+    const note = (id, k, label) => {
+      const el = $(id); if (!el) return;
+      el.textContent = t[k] ? `Saved (${t[k]}). Paste a new one to replace it.`
+        : (t.fromEnv && t.fromEnv[k] ? `Currently using the Railway variable ${label}. Paste here to override it.` : '');
+    };
+    note('#trCapiNote', 'capiToken', 'META_CAPI_TOKEN');
+    note('#trGa4SecretNote', 'ga4Secret', 'GA4_API_SECRET');
     $('#trStatus').innerHTML =
       `<div class="d-row"><span>Meta Pixel ID</span><b>${escHtml(t.pixelId || 'Not set (Contact Information above)')}</b></div>` +
       trackRow('Last Meta event', t.last && t.last.meta) +
@@ -164,7 +169,7 @@ async function loadTrackingForm() {
 async function onSaveTracking(e) {
   e.preventDefault();
   const data = {};
-  Object.entries(TRACK_FIELDS).forEach(([k, sel]) => { if (!$(sel).disabled) data[k] = $(sel).value.trim(); });
+  Object.entries(TRACK_FIELDS).forEach(([k, sel]) => { data[k] = $(sel).value.trim(); });
   const btn = $('#trackingForm').querySelector('button[type="submit"]');
   btn.disabled = true;
   try { await apiSend('PUT', '/api/tracking', data, true); toast('Tracking settings saved'); await loadTrackingForm(); }
