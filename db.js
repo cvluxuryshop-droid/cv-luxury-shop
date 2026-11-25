@@ -159,7 +159,8 @@ function initPixel(id) {
   if (window.fbq) return;
   !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
   fbq('init', id);
-  trackPixel('PageView');
+  // PageView goes out right away so it always precedes ViewContent / AddToCart queued earlier
+  sendPixelEvent('PageView', {}, newEventId(), true);
 }
 
 function getCookie(name) {
@@ -184,18 +185,37 @@ function newEventId() {
 // Purchase is sent from the server when the order is saved, so pass opts.eventID and serverToo=false.
 function trackPixel(name, params, opts, serverToo = true) {
   const eventID = (opts && opts.eventID) || newEventId();
-  pixelReady.then(ok => {
-    if (!ok) return;
-    if (window.fbq) fbq('track', name, params || {}, { eventID });
-    if (!serverToo) return;
-    setTimeout(() => { // short wait so Meta's _fbp cookie exists
-      const ids = fbIdentifiers();
-      fetch('/api/track', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, keepalive: true,
-        body: JSON.stringify({ event_name: name, event_id: eventID, event_source_url: ids.url, fbp: ids.fbp, fbc: ids.fbc, custom_data: params || {} })
-      }).catch(() => {});
-    }, 400);
-  });
+  pushGa4(name, params || {}, eventID); // GA4 via GTM works even without a Pixel ID
+  pixelReady.then(ok => { if (ok) sendPixelEvent(name, params || {}, eventID, serverToo); });
+}
+
+function sendPixelEvent(name, params, eventID, serverToo) {
+  if (window.fbq) fbq('track', name, params, { eventID });
+  if (!serverToo) return;
+  const relay = () => {
+    const ids = fbIdentifiers();
+    fetch('/api/track', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, keepalive: true, // keepalive survives page navigation
+      body: JSON.stringify({ event_name: name, event_id: eventID, event_source_url: ids.url, fbp: ids.fbp, fbc: ids.fbc, custom_data: params })
+    }).catch(() => {});
+  };
+  // _fbp is normally set already (server sets it on page load); only wait for it on the very first hit
+  if (getCookie('_fbp')) relay(); else setTimeout(relay, 400);
+}
+
+// Same events as GA4 ecommerce events in the GTM dataLayer (view_item, add_to_cart, begin_checkout, purchase)
+const GA4_EVENT = { ViewContent: 'view_item', AddToCart: 'add_to_cart', InitiateCheckout: 'begin_checkout', Purchase: 'purchase' };
+function pushGa4(name, p, eventID) {
+  const ev = GA4_EVENT[name];
+  if (!ev) return;
+  const items = Array.isArray(p.contents) && p.contents.length
+    ? p.contents.map(c => ({ item_id: String(c.id), price: Number(c.item_price) || 0, quantity: Number(c.quantity) || 1 }))
+    : (p.content_ids || []).map(id => ({ item_id: String(id), item_name: p.content_name, price: Number(p.value) || 0, quantity: 1 }));
+  const ecommerce = { currency: p.currency || 'BDT', value: Number(p.value) || 0, items };
+  if (ev === 'purchase') ecommerce.transaction_id = eventID;
+  window.dataLayer = window.dataLayer || [];
+  window.dataLayer.push({ ecommerce: null }); // clear the previous ecommerce object (GTM recommendation)
+  window.dataLayer.push({ event: ev, ecommerce });
 }
 
 // Fills elements marked data-s-text / data-s-href with saved settings.
