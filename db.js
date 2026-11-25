@@ -125,7 +125,13 @@ async function dbInsertOrder(order) {
 
 async function dbGetOrders() {
   const rows = await apiGet('/api/orders', true);
-  return (rows || []).map(o => ({ ...o, date: o.created_at }));
+  // Postgres NUMERIC comes back as a string — coerce so sums add instead of concatenating
+  return (rows || []).map(o => ({
+    ...o,
+    total: Number(o.total) || 0,
+    items: (Array.isArray(o.items) ? o.items : []).map(i => ({ ...i, qty: Number(i.qty) || 0, price: Number(i.price) || 0 })),
+    date: o.created_at
+  }));
 }
 
 async function dbUpdateOrderStatus(id, status) {
