@@ -408,7 +408,14 @@ app.use((req, res, next) => {
   const fbclid = typeof req.query.fbclid === 'string' ? req.query.fbclid.slice(0, 500) : '';
   if (fbclid && /^[\w-]+$/.test(fbclid)) set.push(`_fbc=fb.1.${Date.now()}.${fbclid}${opts}`);
   else if (/^fb\.\d\.\d+\./.test(c._fbc || '')) set.push(`_fbc=${c._fbc}${opts}`);
-  if (/^GA\d\.\d\.\d+\.\d+$/.test(c._ga || '')) set.push(`_ga=${c._ga}${opts}`);
+  // GA4 client id: create it on the first visit too (gtag reuses an existing _ga), and keep the
+  // per-property session cookies (_ga_XXXXXXX) alive as well
+  const ga = /^GA\d\.\d\.\d+\.\d+$/.test(c._ga || '') ? c._ga
+    : `GA1.1.${crypto.randomInt(1e8, 2147483647)}.${Math.floor(Date.now() / 1000)}`;
+  set.push(`_ga=${ga}${opts}`);
+  for (const [k, v] of Object.entries(c)) {
+    if (/^_ga_[A-Z0-9]{4,20}$/.test(k) && /^[\w.$-]{1,200}$/.test(v)) set.push(`${k}=${v}${opts}`);
+  }
   res.append('Set-Cookie', set);
   next();
 });
