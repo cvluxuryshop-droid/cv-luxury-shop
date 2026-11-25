@@ -312,4 +312,81 @@ svg { width: 20px; height: 20px; }
   .admin__main { margin-left: 0; }
   .topbar__menu { display: inline-flex; }
 }
-@media (max-width: 520px) { .stats-grid { grid-template-columns: 1fr; } }
+/* ── Phones ── */
+html, body { max-width: 100%; overflow-x: hidden; }
+.stat, .stat__info { min-width: 0; }
+.stat__value { overflow-wrap: anywhere; }
+
+@media (max-width: 880px) {
+  .sidebar { box-shadow: var(--shadow-lg); }
+  .topbar { padding: 0 14px; height: 56px; gap: 10px; }
+  .topbar__title { font-size: 1.05rem; }
+  .content { padding: 14px; }
+}
+
+@media (max-width: 640px) {
+  /* stats: compact 2-up cards */
+  .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 14px; }
+  .stat { padding: 12px; gap: 10px; flex-direction: column; align-items: flex-start; }
+  .stat__icon { width: 36px; height: 36px; }
+  .stat__icon svg { width: 18px; height: 18px; }
+  .stat__value { font-size: 1.15rem; }
+  .stat__label { font-size: 0.75rem; }
+  .topbar__name { display: none; }
+
+  /* iPhone zooms the whole page when an input under 16px is focused */
+  input, select, textarea { font-size: 16px !important; }
+
+  .panel__head { padding: 14px; }
+  .toolbar { gap: 8px; }
+  .search-box { min-width: 100%; }
+  .filters { flex-wrap: nowrap; overflow-x: auto; width: 100%; padding-bottom: 2px; -webkit-overflow-scrolling: touch; }
+  .chip { flex-shrink: 0; }
+
+  /* tables become stacked cards */
+  .table thead { display: none; }
+  .table, .table tbody { display: block; width: 100%; }
+  .table tr { display: grid; gap: 4px 10px; padding: 12px 14px; border-bottom: 1px solid var(--border); align-items: center; }
+  .table tbody tr:last-child { border-bottom: none; }
+  .table td { display: block; padding: 0; border: none; min-width: 0; }
+
+  .table--orders tr {
+    grid-template-columns: 1fr auto;
+    grid-template-areas: "id status" "cust total" "date items" "pay act";
+  }
+  .table--orders .c-id { grid-area: id; }
+  .table--orders .c-status { grid-area: status; justify-self: end; }
+  .table--orders .c-cust { grid-area: cust; }
+  .table--orders .c-total { grid-area: total; justify-self: end; font-size: 0.95rem; }
+  .table--orders .c-date { grid-area: date; font-size: 0.76rem; }
+  .table--orders .c-items { grid-area: items; justify-self: end; color: var(--muted); font-size: 0.76rem; }
+  .table--orders .c-items::before { content: attr(data-label) ": "; }
+  .table--orders .c-pay { grid-area: pay; font-size: 0.76rem; }
+  .table--orders .c-act { grid-area: act; justify-self: end; }
+
+  .table--products tr {
+    grid-template-columns: 1fr auto;
+    grid-template-areas: "prod act" "price badge" "meta meta";
+  }
+  .table--products .c-prod { grid-area: prod; }
+  .table--products .c-act { grid-area: act; }
+  .table--products .c-price { grid-area: price; }
+  .table--products .c-orig { display: none; }
+  .table--products .c-badge { grid-area: badge; justify-self: end; }
+  .table--products .c-code, .table--products .c-cat { display: none; }
+
+  /* modal: full screen sheet */
+  .modal-overlay { padding: 0; align-items: flex-end; }
+  .modal { max-height: 94vh; border-radius: 14px 14px 0 0; }
+  .modal__body { padding: 16px; }
+  .modal__head, .modal__foot { padding: 14px 16px; }
+  .pf-size-row .pf-size-stock { width: 90px; }
+  .pf-color-row .pf-color-val { width: 84px; }
+  .pf-image-row { flex-wrap: wrap; }
+
+  .order-drawer { width: 100%; max-width: 100%; }
+}
+
+@media (max-width: 340px) {
+  .stats-grid { grid-template-columns: 1fr; }
+}

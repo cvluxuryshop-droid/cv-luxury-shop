@@ -74,6 +74,11 @@ async function showAdmin() {
   $('#settingsForm').addEventListener('submit', onSaveSettings);
   $('#exportBtn').addEventListener('click', exportCSV);
   $('#menuToggle').addEventListener('click', () => $('#sidebar').classList.toggle('open'));
+  // phones: tap outside the open sidebar to close it
+  document.addEventListener('click', (e) => {
+    const sb = $('#sidebar');
+    if (sb.classList.contains('open') && !sb.contains(e.target) && !e.target.closest('#menuToggle')) sb.classList.remove('open');
+  });
   await Promise.all([refreshOrders(), loadCatalogue()]);
   renderAll();
 }
@@ -214,7 +219,7 @@ function renderOrders() {
 
 function ordersTableHTML(orders, withActions) {
   return `
-  <table class="table">
+  <table class="table table--orders">
     <thead>
       <tr>
         <th>Order</th><th>Customer</th><th>Date</th><th>Items</th><th>Total</th><th>Payment</th><th>Status</th>${withActions ? '<th></th>' : ''}
@@ -223,17 +228,17 @@ function ordersTableHTML(orders, withActions) {
     <tbody>
       ${orders.map(o => `
         <tr data-id="${o.id}" class="row-click">
-          <td class="mono">#${o.id}</td>
-          <td>
+          <td class="mono c-id">#${o.id}</td>
+          <td class="c-cust">
             <div class="cell-strong">${o.customer.name}</div>
             <div class="cell-sub">${o.customer.phone}</div>
           </td>
-          <td class="cell-sub">${fmtDate(o.date)}</td>
-          <td>${o.items.reduce((s, i) => s + i.qty, 0)}</td>
-          <td class="cell-strong">${money(o.total)}</td>
-          <td class="cell-sub">${PAY_LABEL[o.payment] || o.payment}</td>
-          <td><span class="status status--${o.status}">${STATUS_LABEL[o.status]}</span></td>
-          ${withActions ? `<td class="row-actions">
+          <td class="cell-sub c-date">${fmtDate(o.date)}</td>
+          <td class="c-items" data-label="Items">${o.items.reduce((s, i) => s + i.qty, 0)}</td>
+          <td class="cell-strong c-total">${money(o.total)}</td>
+          <td class="cell-sub c-pay">${PAY_LABEL[o.payment] || o.payment}</td>
+          <td class="c-status"><span class="status status--${o.status}">${STATUS_LABEL[o.status]}</span></td>
+          ${withActions ? `<td class="row-actions c-act">
             <button class="icon-btn view-btn" data-id="${o.id}" title="View">
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
             </button>
@@ -373,18 +378,18 @@ function renderProducts() {
   }
 
   $('#productsTable').innerHTML = `
-  <table class="table">
+  <table class="table table--products">
     <thead><tr><th>Product</th><th>Code</th><th>Category</th><th>Price</th><th>Original</th><th>Badge</th><th></th></tr></thead>
     <tbody>
       ${list.map(p => `
         <tr>
-          <td><div class="prod-cell"><img src="${p.image}" alt="${p.name}" width="40" height="40" onerror="this.style.visibility='hidden'"><span>${p.name}</span></div></td>
-          <td class="mono">${p.code || '-'}</td>
-          <td class="cell-sub">${p.category.replace('-', ' ')}</td>
-          <td class="cell-strong">${money(p.price)}</td>
-          <td class="cell-sub">${p.originalPrice ? '<s>' + money(p.originalPrice) + '</s>' : '-'}</td>
-          <td><span class="status status--${p.badge === 'sale' ? 'processing' : p.badge === 'new' ? 'shipped' : p.badge === 'out-of-stock' ? 'cancelled' : 'delivered'}">${p.badge === 'in-stock' ? 'In Stock' : p.badge === 'out-of-stock' ? 'Out of Stock' : p.badge}</span></td>
-          <td class="row-actions">
+          <td class="c-prod"><div class="prod-cell"><img src="${p.image}" alt="${p.name}" width="40" height="40" onerror="this.style.visibility='hidden'"><span>${p.name}</span></div></td>
+          <td class="mono c-code">${p.code || '-'}</td>
+          <td class="cell-sub c-cat">${p.category.replace('-', ' ')}</td>
+          <td class="cell-strong c-price">${money(p.price)}</td>
+          <td class="cell-sub c-orig">${p.originalPrice ? '<s>' + money(p.originalPrice) + '</s>' : '-'}</td>
+          <td class="c-badge"><span class="status status--${p.badge === 'sale' ? 'processing' : p.badge === 'new' ? 'shipped' : p.badge === 'out-of-stock' ? 'cancelled' : 'delivered'}">${p.badge === 'in-stock' ? 'In Stock' : p.badge === 'out-of-stock' ? 'Out of Stock' : p.badge}</span></td>
+          <td class="row-actions c-act">
             <button class="icon-btn edit-prod" data-id="${p.id}" title="Edit">
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             </button>

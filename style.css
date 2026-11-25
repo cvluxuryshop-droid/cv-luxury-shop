@@ -2537,6 +2537,9 @@ main { animation: fadeIn 0.4s ease both; }
     text-align: center;
   }
 
+  /* iPhone zooms the whole page when an input under 16px is focused (checkout form, search) */
+  input, select, textarea { font-size: 16px !important; }
+
   /* Mobile search bar */
   .mobile-search {
     display: block;
